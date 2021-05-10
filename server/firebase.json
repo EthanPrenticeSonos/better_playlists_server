@@ -1,0 +1,16 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "betterplaylists-f5b1f-firebase-adminsdk-b37df-fabea8905e.json",
+      "**/test/**"
+    ],
+    "rewrites": [ {
+        "source": "**",
+        "function": "app"
+      } ]
+  }
+}

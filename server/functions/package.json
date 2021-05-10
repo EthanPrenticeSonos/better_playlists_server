@@ -1,0 +1,31 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log",
+    "local": "node app/index.js --local",
+    "test": "mocha --reporter spec"
+  },
+  "engines": {
+    "node": "12"
+  },
+  "main": "app/index.js",
+  "dependencies": {
+    "@google-cloud/firestore": "4.11.0",
+    "axios": "^0.21.1",
+    "chai": "^4.3.4",
+    "express": "^4.17.1",
+    "firebase-admin": "^9.2.0",
+    "firebase-functions": "^3.11.0",
+    "mocha": "^8.3.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.0"
+  },
+  "private": true
+}

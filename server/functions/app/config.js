@@ -1,0 +1,1 @@
+module.exports.hostUrl = "betterplaylists-f5b1f.web.app";
