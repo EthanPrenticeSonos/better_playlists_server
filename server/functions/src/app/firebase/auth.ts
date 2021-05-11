@@ -1,51 +1,54 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+import { Request, Response } from 'express';
+import { DocumentReference, WriteResult } from '@google-cloud/firestore';
 
-const firestore = require('../util/firebase_config.js').firestore;
+const firestore = require('../firebase/firebase_config').firestore;
 
 const COLLECTION_NAME = 'users';
 
 
 /**
  * Creates the user document if it does not already exist
- * @param {String} firebaseUserId 
+ * @param {string} firebaseUserId 
  * @returns Promise from creating the user.  Error if user already exists
  */
-function createUserFromFirebaseAuth(firebaseUserId) {
-    var doc = firestore.collection(COLLECTION_NAME).doc(firebaseUserId);
+async function createUserFromFirebaseAuth(firebaseUserId: string): Promise<WriteResult> {
+    let doc: DocumentReference = firestore.collection(COLLECTION_NAME).doc(firebaseUserId);
 
-    return doc.get().then(docSnap => {
-        if (!docSnap.exists) {
-            return doc.set({
-                'services': {
-                    'spotify': null
-                }
-            }, {merge: true});
-            // use merge true - firebase functions can take awhile to trigger when
-            //   cold starting.  if we set a service id before the doc exists we want it
-            //   to persist
-        }
-        else {
-            return Promise.reject({
-                'status': 409,
-                'error': 'User already exists'
-            })
-        }
-    })
+    const docSnap = await doc.get();
+    if (!docSnap.exists) {
+        return await doc.set({
+            'services': {
+                'spotify': null
+            }
+        }, { merge: true });
+        // use merge true - firebase functions can take awhile to trigger when
+        //   cold starting.  if we set a service id before the doc exists we want it
+        //   to persist
+    }
+    else {
+        return Promise.reject({
+            'status': 409,
+            'error': 'User already exists'
+        });
+    }
 }
 
 
 /**
  * Adds the Spotify user ID to the Firebase user's document
- * @param {String} firebaseUserId 
+ * @param {string} firebaseUserId 
  * @returns Promise from setting the id.
  */
- function addSpotifyUserId(firebaseUserId, spotifyId) {
-    var doc = firestore.collection(COLLECTION_NAME).doc(firebaseUserId);
+ function addSpotifyUserId(firebaseUserId: string, spotifyId: string): Promise<WriteResult> {
+    let doc = firestore.collection(COLLECTION_NAME).doc(firebaseUserId);
 
     return doc.set({
             'services': {
-                'spotify': spotifyId
+                'spotify': {
+                    'id': spotifyId
+                }
             }
         }, {merge: true});
 }
@@ -55,28 +58,31 @@ function createUserFromFirebaseAuth(firebaseUserId) {
  * @param {String} firebaseUserId 
  * @returns Promise with the Spotify account ID associated with the firebase user
  */
-function getSpotifyUserId(firebaseUserId) {
-    return firestore.collection(COLLECTION_NAME)
-        .doc(firebaseUserId)
-        .get()
-        .then(docSnap => {
-            if (docSnap.exists) {
-                var spotifyData = docSnap.get('services.spotify');
-                if (spotifyData && spotifyData.id) {
-                    return spotifyData.id;
-                }
-                else {
-                    return Promise.reject({
-                        'status': 404,
-                        'error': 'User is not registered for that service'
-                    });
-                }
+async function getSpotifyUserId(firebaseUserId: string): Promise<string> {
+    try {
+        let docSnap = await firestore.collection(COLLECTION_NAME).doc(firebaseUserId).get();
+        if (docSnap.exists) {
+            let spotifyData = docSnap.get('services.spotify');
+            if (spotifyData && spotifyData.id) {
+                return spotifyData.id;
             }
+            else {
+                return Promise.reject({
+                    'status': 404,
+                    'error': 'User is not registered for that service'
+                });
+            }
+        }
+        else {
             return Promise.reject({
                 'status': 404,
                 'error': 'User does not exist'
             });
-        });
+        }
+    } 
+    catch (e) {
+        return Promise.reject(e);
+    } 
 }
 
 
@@ -84,11 +90,12 @@ function getSpotifyUserId(firebaseUserId) {
 // The Firebase ID token needs to be passed as a Bearer token in the Authorization HTTP header like this:
 // `Authorization: Bearer <Firebase ID Token>`.
 // when decoded successfully, the ID Token content will be added as `req.headers.user`.
-const validateFirebaseIdToken = async (req, res, next) => {
+const validateFirebaseIdToken = async (req: Request, res: Response, next: Function) => {
     functions.logger.log('Check if request is authorized with Firebase ID token');
   
-    if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) &&
-        !(req.cookies && req.cookies.__session)) {
+    let authHeader = req.get('authorization');
+
+    if (!authHeader?.startsWith('Bearer ') && !req.cookies?.__session) {
         functions.logger.error(
             'No Firebase ID token was passed as a Bearer token in the Authorization header.',
             'Make sure you authorize your request by providing the following HTTP header:',
@@ -99,12 +106,12 @@ const validateFirebaseIdToken = async (req, res, next) => {
         return;
     }
   
-    let idToken;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    let idToken: string;
+    if (authHeader?.startsWith('Bearer ')) {
         functions.logger.log('Found "Authorization" header');
         // Read the ID Token from the Authorization header.
-        idToken = req.headers.authorization.split('Bearer ')[1];
-    } else if(req.cookies) {
+        idToken = authHeader.split('Bearer ')[1];
+    } else if (req.cookies) {
         functions.logger.log('Found "__session" cookie');
         // Read the ID Token from cookie.
         idToken = req.cookies.__session;
@@ -117,7 +124,7 @@ const validateFirebaseIdToken = async (req, res, next) => {
     try {
           const decodedIdToken = await admin.auth().verifyIdToken(idToken);
           functions.logger.log('ID Token correctly decoded', decodedIdToken);
-          req.headers.user = decodedIdToken;
+          req.headers.user = JSON.stringify(decodedIdToken);
           next();
           return;
     } catch (error) {

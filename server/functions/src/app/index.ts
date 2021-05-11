@@ -1,13 +1,13 @@
-const functions = require("firebase-functions");
-const express = require('express');
-const morgan = require('morgan');
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser')();
-const os = require('os');
+import * as functions from 'firebase-functions';
+import * as express from 'express';
+import * as morgan from 'morgan';
+import * as bodyParser from 'body-parser';
+import * as cookieParser from 'cookie-parser';
+import * as os from 'os';
 
-const util = require('./util/util.js');
-const spotify = require('./services/spotify/routes/spotify_routes.js');
-const firebaseAuth = require('./firebase/auth.js')
+const util = require('./util/util');
+const spotify = require('./services/spotify/routes/spotify_routes');
+const firebaseAuth = require('./firebase/auth')
 
 
 const app = express();
@@ -15,7 +15,7 @@ const app = express();
 app.use(bodyParser.raw());
 app.use(bodyParser.json());
 
-app.use(cookieParser);
+app.use(cookieParser());
 app.use(firebaseAuth.validateFirebaseIdToken);
 
 app.use(morgan(':method :url :status :response-time ms - :res[content-length]'));

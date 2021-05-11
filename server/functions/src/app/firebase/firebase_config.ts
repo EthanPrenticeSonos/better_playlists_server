@@ -2,9 +2,9 @@ const Firestore = require('@google-cloud/firestore');
 const PROJECT_ID = 'betterplaylists-f5b1f';
 
 // require and initialize the admin SDK
-const admin = require('firebase-admin');
+import admin = require('firebase-admin');
 
-const util = require('./util.js');
+const util = require('../util/util');
 
 if (util.isLocal) {
     var serviceAccount = require("../../../betterplaylists-f5b1f-firebase-adminsdk-b37df-fabea8905e.json");

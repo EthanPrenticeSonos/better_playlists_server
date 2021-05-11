@@ -1,8 +1,8 @@
-const express = require('express');
+import * as express from 'express';
 
-const auth = require('./auth.js');
-const playlists = require('./playlists.js');
-const users = require('./users.js');
+const auth = require('./auth');
+const playlists = require('./playlists');
+const users = require('./users');
 
 
 var router = express.Router({'mergeParams': true});
@@ -14,9 +14,5 @@ router.use('/users', auth.authMiddleware);
 
 router.use('/playlists', playlists.router);
 router.use('/users', users.router);
-
-router.get('/', (req, res) => {
-    res.write('spotify');
-});
 
 module.exports.router = router;

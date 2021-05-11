@@ -1,5 +1,5 @@
 var expect = require("chai").expect;
-var spotifyAuth = require('../../../app/services/spotify/auth.js');
+var spotifyAuth = require('../../../app/services/spotify/auth');
 
 describe("Spotify Authorization & Authentication", () => {
     describe("Spotify Authorization", () => {
