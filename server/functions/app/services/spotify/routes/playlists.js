@@ -72,7 +72,7 @@ function getPlaylistById(playlistId, searchParams, headers) {
             var nextUrl = new url.URL(playlist.tracks.next);
             nextUrl.host = config.hostUrl;
             nextUrl.pathname = `/spotify/playlists/${playlistId}`;
-            serviceRes.data.next = nextUrl.href;
+            res.data.next = nextUrl.href;
         }
 
         return playlist;

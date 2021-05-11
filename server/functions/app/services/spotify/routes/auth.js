@@ -2,7 +2,10 @@ const express = require('express');
 const axios = require('axios');
 const url = require('url');
 const util = require('../../../util/util.js');
+const functions = require('firebase-functions');
 
+
+const authFirebase = require('../../../firebase/auth.js');
 const spotifyFirestore = require('../firestore/spotify_firestore.js');
 const spotifyUsers = require('./users.js');
 
@@ -106,22 +109,51 @@ function authenticate(req, res) {
     }
 
     authPromise.then(authResponse => {
-        // don't send back all auth data - keep it contained in server
-        res.status(200);
-        res.send({
-            'user_id': authResponse.user_id
-        });
+        var firebaseUserId = req.get('user').uid;
+        var spotifyUserId = authResponse.user_id;
+
+        if (firebaseUserId === spotifyUserId) {           
+            res.status(409).send({
+                'error': 'User already associated with another Spotify account!'
+            })
+        }
+        else {
+            functions.logger.log(`Firebase user \'${firebaseUserId}\' registered with Spotify account ${spotifyUserId}`);
+            authFirebase.addSpotifyUserId(firebaseUserId, spotifyUserId)
+                .then(_ => {
+                    // don't send back all auth data - keep it contained in server
+                    res.status(200).send();
+
+                }).catch(error => {
+                    if (error.response) {
+                        functions.logger.error(error.response.data);
+                        res.status(error.response.status);
+                        res.send(error.response.data);
+                    }
+                    else {
+                        functions.logger.error(error);
+                        res.status(502);
+                        res.send(error);
+                    }
+                });
+        }
 
     }).catch(error => {
-        console.log(`authenticate error: (${error.response.status}) ${JSON.stringify(error.response.data)}`);
 
-        if (error.response.data.error) {
+        if (error.response && error.response.data.error) {
+            functions.logger.error(error.response.data);
             res.status(error.response.data.error.status);
             res.send(error.response.data.error);
         }
-        else {
+        else if (error.response) {
+            functions.logger.error(error.response.data);
             res.status(error.response.status);
             res.send(error.response.data);
+        }
+        else {
+            functions.logger.error(error);
+            res.status(502);
+            res.send(error);
         }
 
     });
@@ -304,18 +336,15 @@ function isScopesValid(scopes) {
  * @param {Function} next 
  */
 function authMiddleware(req, res, next) {
+    // all requests must have a user header from the firebase auth middleware
+    var firebaseUserId = req.get('user').uid;
 
-    // all requests must have a user_id header field unless
-    // going to the /auth/* router
-    var userId = req.get('user_id');
-
-    if (!userId) { // assume all routes using middleware require a user id
-        res.status(400).send("No Spotify user id was provided!");
+    if (!firebaseUserId) { // assume all routes using middleware require a user id
+        res.status(400).send("No user id was provided!");
     }
 
-    console.log(`received request from userId=${userId}`);
-
-    spotifyFirestore.auth.getUserAuth(userId)
+    authFirebase.getSpotifyUserId(firebaseUserId).then(userId => {
+        spotifyFirestore.auth.getUserAuth(userId)
         .then(authData => {
 
             var currTime = util.convertDateToUtc(new Date());
@@ -329,7 +358,6 @@ function authMiddleware(req, res, next) {
                     // add auth header, remove user id header
                     getAuthHeaderEntry(userId).then(authEntry => {
                         req.headers['Authorization'] = authEntry;
-                        delete req.headers.user_id;
 
                         next();
                     });
@@ -350,7 +378,6 @@ function authMiddleware(req, res, next) {
                     // add auth header, remove user id header
                     getAuthHeaderEntry(userId).then(authEntry => {
                         req.headers['Authorization'] = authEntry;
-                        delete req.headers.user_id;
 
                         next();
                     });
@@ -378,6 +405,20 @@ function authMiddleware(req, res, next) {
                 console.log(`authMiddleware: Error ${JSON.stringify(error.response.data)}`);
             }
         });
+    })
+    .catch(error => {
+        if (error.response) {
+            functions.logger.error(error.response.data);
+            res.status(error.response.status);
+            res.send(error.response.data);
+        }
+        else {
+            functions.logger.error(error);
+            res.status(502);
+            res.send(error);
+        }
+
+    });
 }
 
 
