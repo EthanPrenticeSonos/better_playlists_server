@@ -1,2 +1,4 @@
-module.exports.users = require('./users');
-module.exports.auth = require('./auth');
+import * as auth from './auth';
+import * as users from './users';
+
+export {auth, users};

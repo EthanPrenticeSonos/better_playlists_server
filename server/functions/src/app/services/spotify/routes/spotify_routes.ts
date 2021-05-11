@@ -1,18 +1,16 @@
 import * as express from 'express';
 
-const auth = require('./auth');
-const playlists = require('./playlists');
-const users = require('./users');
+import { router as authRouter, authMiddleware } from './auth';
+import { router as playlistRouter} from './playlists';
+import { router as userRouter } from './users';
 
 
-var router = express.Router({'mergeParams': true});
+export const router = express.Router({'mergeParams': true});
 
-router.use('/auth', auth.router);
+router.use('/auth', authRouter);
 
-router.use('/playlists', auth.authMiddleware);
-router.use('/users', auth.authMiddleware);
+router.use('/playlists', authMiddleware);
+router.use('/users', authMiddleware);
 
-router.use('/playlists', playlists.router);
-router.use('/users', users.router);
-
-module.exports.router = router;
+router.use('/playlists', playlistRouter);
+router.use('/users', userRouter);

@@ -3,7 +3,8 @@ import * as url from 'url';
 import * as functions from 'firebase-functions';
 import axios from 'axios';
 
-const util = require('../../../util/util');
+import { Headers } from '../../../adt/headers';
+import * as util from '../../../util/util';
 
 
 /**
@@ -12,7 +13,7 @@ const util = require('../../../util/util');
  * @param {Headers} headers must contain Authorization header
  * @returns information about the user associated with Authorization header
  */
-async function getUser(headers: Headers): Promise<Object> {
+export async function getUser(headers: Headers): Promise<any> {
     // forward to Spotify service
     var spotifyUrl = new url.URL('https://api.spotify.com/v1/me');
 
@@ -28,7 +29,7 @@ async function getUser(headers: Headers): Promise<Object> {
 }
 
 
-var router = express.Router({'mergeParams': true});
+export const router = express.Router({'mergeParams': true});
 
 // gets info about the authorized user
 router.get('/me', (req, res) => {
@@ -48,8 +49,3 @@ router.get('/me', (req, res) => {
             }
         });
 });
-
-
-module.exports.router = router;
-
-module.exports.getUser = getUser;

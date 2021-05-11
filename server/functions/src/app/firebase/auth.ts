@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
 import { DocumentReference, WriteResult } from '@google-cloud/firestore';
 
-const firestore = require('../firebase/firebase_config').firestore;
+import { firestore } from '../firebase/firebase_config';
 
 const COLLECTION_NAME = 'users';
 
@@ -13,7 +13,7 @@ const COLLECTION_NAME = 'users';
  * @param {string} firebaseUserId 
  * @returns Promise from creating the user.  Error if user already exists
  */
-async function createUserFromFirebaseAuth(firebaseUserId: string): Promise<WriteResult> {
+export async function createUserFromFirebaseAuth(firebaseUserId: string): Promise<WriteResult> {
     let doc: DocumentReference = firestore.collection(COLLECTION_NAME).doc(firebaseUserId);
 
     const docSnap = await doc.get();
@@ -41,7 +41,7 @@ async function createUserFromFirebaseAuth(firebaseUserId: string): Promise<Write
  * @param {string} firebaseUserId 
  * @returns Promise from setting the id.
  */
- function addSpotifyUserId(firebaseUserId: string, spotifyId: string): Promise<WriteResult> {
+ export function addSpotifyUserId(firebaseUserId: string, spotifyId: string): Promise<WriteResult> {
     let doc = firestore.collection(COLLECTION_NAME).doc(firebaseUserId);
 
     return doc.set({
@@ -58,7 +58,7 @@ async function createUserFromFirebaseAuth(firebaseUserId: string): Promise<Write
  * @param {String} firebaseUserId 
  * @returns Promise with the Spotify account ID associated with the firebase user
  */
-async function getSpotifyUserId(firebaseUserId: string): Promise<string> {
+export async function getSpotifyUserId(firebaseUserId: string): Promise<string> {
     try {
         let docSnap = await firestore.collection(COLLECTION_NAME).doc(firebaseUserId).get();
         if (docSnap.exists) {
@@ -90,12 +90,14 @@ async function getSpotifyUserId(firebaseUserId: string): Promise<string> {
 // The Firebase ID token needs to be passed as a Bearer token in the Authorization HTTP header like this:
 // `Authorization: Bearer <Firebase ID Token>`.
 // when decoded successfully, the ID Token content will be added as `req.headers.user`.
-const validateFirebaseIdToken = async (req: Request, res: Response, next: Function) => {
+export async function validateFirebaseIdToken(req: Request, res: Response, next: Function) {
     functions.logger.log('Check if request is authorized with Firebase ID token');
   
     let authHeader = req.get('authorization');
 
-    if (!authHeader?.startsWith('Bearer ') && !req.cookies?.__session) {
+    functions.logger.debug('Received authorization header: ', authHeader);
+
+    if (!(authHeader && authHeader.startsWith('Bearer ')) && !req.cookies?.__session) {
         functions.logger.error(
             'No Firebase ID token was passed as a Bearer token in the Authorization header.',
             'Make sure you authorize your request by providing the following HTTP header:',
@@ -133,8 +135,3 @@ const validateFirebaseIdToken = async (req: Request, res: Response, next: Functi
         return;
     }
 };
-
-module.exports.createUserFromFirebaseAuth = createUserFromFirebaseAuth;
-module.exports.addSpotifyUserId = addSpotifyUserId;
-module.exports.getSpotifyUserId = getSpotifyUserId;
-module.exports.validateFirebaseIdToken = validateFirebaseIdToken;

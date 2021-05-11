@@ -1,21 +1,23 @@
 const Firestore = require('@google-cloud/firestore');
+import * as admin from 'firebase-admin';
+
+import * as util from '../util/util';
+
+
 const PROJECT_ID = 'betterplaylists-f5b1f';
 
-// require and initialize the admin SDK
-import admin = require('firebase-admin');
 
-const util = require('../util/util');
-
+export let firestore: typeof Firestore
 if (util.isLocal) {
     var serviceAccount = require("../../../betterplaylists-f5b1f-firebase-adminsdk-b37df-fabea8905e.json");
     admin.initializeApp({
         'credential': admin.credential.cert(serviceAccount)
     });
-    module.exports.firestore = admin.firestore();
+    firestore = admin.firestore();
 }
 else {
     admin.initializeApp();
-    module.exports.firestore = new Firestore({
+    firestore = new Firestore({
       'projectId': PROJECT_ID,
       'timestampsInSnapshots': true,
     });

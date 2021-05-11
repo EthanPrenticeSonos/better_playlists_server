@@ -3,8 +3,9 @@ import * as url from 'url';
 import * as functions from 'firebase-functions';
 import axios from 'axios';
 
-const util = require('../../../util/util');
-const config = require('../../../config');
+import { Headers } from '../../../adt/headers'
+import * as util from '../../../util/util';
+import * as config from '../../../config';
 
 
 /**
@@ -15,7 +16,7 @@ const config = require('../../../config');
  * @param {Object} headers 
  * @returns Promise associated with getting the playlists (promise returns playlists on success)
  */
-async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers): Promise<Object> {
+async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers): Promise<any> {
     var spotifyUrl = new url.URL('https://api.spotify.com/v1/me/playlists');
 
     var reqConfig = {
@@ -52,7 +53,7 @@ async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers)
  * @param {Object} headers 
  * @returns 
  */
-async function getPlaylistById(playlistId: String, searchParams: URLSearchParams, headers: Headers): Promise<Object> {
+async function getPlaylistById(playlistId: String, searchParams: URLSearchParams, headers: Headers): Promise<any> {
     let spotifyUrl = new url.URL(`https://api.spotify.com/v1/playlists/${playlistId}`);
 
     let reqConfig = {
@@ -92,7 +93,7 @@ async function getPlaylistById(playlistId: String, searchParams: URLSearchParams
  * @param {Object} headers 
  * @returns 
  */
- async function getPlaylistTracksById(playlistId: String, searchParams: URLSearchParams, headers: Headers): Promise<Object> {
+ async function getPlaylistTracksById(playlistId: String, searchParams: URLSearchParams, headers: Headers): Promise<any> {
     let spotifyUrl = new url.URL(`https://api.spotify.com/v1/users/spotify/playlists/${playlistId}/tracks`);
 
     let reqConfig = {
@@ -124,7 +125,7 @@ async function getPlaylistById(playlistId: String, searchParams: URLSearchParams
 
 
 
-var router = express.Router({'mergeParams': true});
+export const router = express.Router({'mergeParams': true});
 
 
 // responds with the user's followed playlists (basic info) if successful
@@ -200,6 +201,3 @@ router.get('/:playlistId', (req, res) => {
             }
         });
 });
-
-
-module.exports.router = router;

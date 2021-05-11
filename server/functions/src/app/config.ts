@@ -1,1 +1,1 @@
-module.exports.hostUrl = "betterplaylists-f5b1f.web.app";
+export let hostUrl = "betterplaylists-f5b1f.web.app";

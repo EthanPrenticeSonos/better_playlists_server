@@ -5,9 +5,9 @@ import * as bodyParser from 'body-parser';
 import * as cookieParser from 'cookie-parser';
 import * as os from 'os';
 
-const util = require('./util/util');
-const spotify = require('./services/spotify/routes/spotify_routes');
-const firebaseAuth = require('./firebase/auth')
+import * as util from './util/util';
+import * as spotifyRoutes from './services/spotify/routes/spotify_routes';
+import * as firebaseAuth from './firebase/auth';
 
 
 const app = express();
@@ -20,7 +20,7 @@ app.use(firebaseAuth.validateFirebaseIdToken);
 
 app.use(morgan(':method :url :status :response-time ms - :res[content-length]'));
 
-app.use('/spotify', spotify.router);
+app.use('/spotify', spotifyRoutes.router);
 
 app.get('/', (req, res) => {
     res.send('hello');

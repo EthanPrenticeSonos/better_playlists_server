@@ -5,10 +5,8 @@
 import { WriteResult } from "@google-cloud/firestore";
 import { SpotifyAuth } from "../adt/spotify_auth";
 
-const firestore = require('../../../firebase/firebase_config').firestore;
-
-const firestoreUsers = require('./users');
-const SpotifyAuth = require('../adt/spotify_auth');
+import { firestore } from '../../../firebase/firebase_config';
+import * as firestoreUsers from './users';
 
 const COLLECTION_NAME = 'spotify_users';
 
@@ -20,7 +18,7 @@ const COLLECTION_NAME = 'spotify_users';
  * @param {string} userId 
  * @returns the authentication object associated with the userId
  */
-module.exports.getUserAuth = async function(userId: string): Promise<SpotifyAuth> {
+export async function getUserAuth(userId: string): Promise<SpotifyAuth> {
     
     if (authCache.userId) { // we have this auth data cached
         return authCache[userId];
@@ -65,7 +63,7 @@ module.exports.getUserAuth = async function(userId: string): Promise<SpotifyAuth
  * @param {SpotifyAuth} authObj
  * @returns Promise associated with putting [authObj] in Firestore
  */
-module.exports.putUserAuth = async function(userId: string, authObj: SpotifyAuth): Promise<WriteResult> {
+export async function putUserAuth(userId: string, authObj: SpotifyAuth): Promise<WriteResult> {
 
     // first cache it
     authCache[userId] = authObj;
@@ -94,11 +92,10 @@ module.exports.putUserAuth = async function(userId: string, authObj: SpotifyAuth
 };
 
 
-interface AuthCache {
+export interface AuthCache {
     [userId: string]: SpotifyAuth
-}
+};
 
 // use this for caching results for getting user auth
 // otherwise we will query firestore each Spotify request to get the access token
-var authCache: AuthCache = { };
-module.exports.authCache = authCache;
+export let authCache: AuthCache = { };

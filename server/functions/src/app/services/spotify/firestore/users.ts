@@ -1,11 +1,11 @@
 /**
  * Manages the Spotify user functions and caches for Firestore
  */
-
 import { WriteResult } from "@google-cloud/firestore";
-import { SpotifyAuth } from "../adt/spotify_auth";
 
-const firestore = require('../../../firebase/firebase_config').firestore;
+import { SpotifyAuth } from "../adt/spotify_auth";
+import { firestore } from '../../../firebase/firebase_config';
+
 const COLLECTION_NAME = 'spotify_users';
 
 
@@ -16,7 +16,7 @@ const COLLECTION_NAME = 'spotify_users';
  * @returns Promise associated with setting the auth object of document [userId]
  *          409 error if resource already exists
  */
-module.exports.createUser = async function(userId: string, authObj: SpotifyAuth): Promise<WriteResult> {
+export async function createUser(userId: string, authObj: SpotifyAuth): Promise<WriteResult> {
     let doc = firestore
         .collection(COLLECTION_NAME)
         .doc(userId);

@@ -1,14 +1,12 @@
 import { Headers } from '../adt/headers';
 
-var isLocal = false;
+export let isLocal = false;
 process.argv.forEach(function (val, index, array) {
     if (val === '--local') {
         isLocal = true;
         return;
     }
 });
-
-module.exports.isLocal = isLocal;
 
 export function filterHeaders(headers: Headers): Headers {
     var keyList = [

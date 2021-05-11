@@ -7,11 +7,9 @@ import { SpotifyUserAuth } from '../adt/spotify_user_auth';
 
 import * as util from '../../../util/util';
 import { Headers } from '../../../adt/headers';
-
-const authFirebase = require('../../../firebase/auth');
-const spotifyFirestore = require('../firestore/spotify_firestore');
-const spotifyUsers = require('./users');
-const SpotifyAuth = require('../adt/spotify_auth');
+import * as authFirebase from '../../../firebase/auth';
+import * as spotifyFirestore from '../firestore/spotify_firestore';
+import * as spotifyUsers from './users';
 
 
 const SPOTIFY_CLIENT_ID = "79cde8abd53b43058474f611783fdf9b";
@@ -330,7 +328,7 @@ function isScopesValid(scopes: Array<string>): boolean {
  * @param {Response} res 
  * @param {Function} next 
  */
-async function authMiddleware(req: express.Request, res: express.Response, next: Function): Promise<void> {
+export async function authMiddleware(req: express.Request, res: express.Response, next: Function): Promise<void> {
     // all requests must have a user header from the firebase auth middleware
     let firebaseUserId: string = JSON.parse(req.get('user')!).uid;
 
@@ -346,7 +344,7 @@ async function authMiddleware(req: express.Request, res: express.Response, next:
 
         // Token has not expired
         if (currTime.getTime() < authData.expires_at.getTime()) {
-            if (isScopesValid(authData.scopes)) {
+            if (authData.scopes && isScopesValid(authData.scopes!)) {
 
                 // add Spotify Authorization header to request
                 let authHeaderEntry = await getAuthHeaderEntry(spotifyUserId);
@@ -404,7 +402,7 @@ async function authMiddleware(req: express.Request, res: express.Response, next:
  * @param {string} userId the id of the Spotify user
  * @returns the authorization header value for Spotify on success, null on failure
  */
- async function getAuthHeaderEntry(userId: string): Promise<string> {
+async function getAuthHeaderEntry(userId: string): Promise<string> {
     try {
         let userAuth = await spotifyFirestore.auth.getUserAuth(userId);
         return `Bearer ${userAuth.access_token}`;
@@ -416,7 +414,7 @@ async function authMiddleware(req: express.Request, res: express.Response, next:
 }
 
 
-var router = express.Router({'mergeParams': true});
+export let router = express.Router({'mergeParams': true});
 
 // Covers authorization & authentication
 router.route('/')
@@ -441,8 +439,3 @@ router.get('/isAuthenticated', (req, res) => {
         }
     });
  })
-
-
-module.exports.router = router;
-
-module.exports.authMiddleware = authMiddleware;
