@@ -25,6 +25,8 @@ async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers)
 
     spotifyUrl.search = searchParams.toString();
 
+    functions.logger.debug(`Redirecting request to ${spotifyUrl.href}`);
+
     try {
         let playlistsRes = await axios.get(spotifyUrl.href, reqConfig);
 
@@ -130,7 +132,7 @@ export const router = express.Router({'mergeParams': true});
 
 // responds with the user's followed playlists (basic info) if successful
 router.get('/me', async (req, res) => {
-    console.log("requested all user's playlists.");
+    functions.logger.debug(`Requested all playlists for Spotify user`);
     
     // @ts-ignore
     let searchParams = new URLSearchParams(req.query);
@@ -158,6 +160,10 @@ router.get('/me', async (req, res) => {
 // get tracks of a playlist by id
 router.get('/:playlistId/tracks', (req, res) => {
     var playlistId = req.params.playlistId;
+
+    functions.logger.debug(`Requested tracks for Spotify playlist ${playlistId}`);
+
+
     // @ts-ignore 
     var searchParams = new URLSearchParams(req.query);
 
@@ -168,12 +174,15 @@ router.get('/:playlistId/tracks', (req, res) => {
             res.status(200).send(playlistTracks);
         })
         .catch(error => {
-            console.log("Error getting Spotify playlist tracks");
-            console.log(error);
-
             if (error.response) {
+                functions.logger.error("Error getting Spotify playlist tracks", error.response.status, error.response.data);
                 res.status(error.response.status);
                 res.send(error.response.data);
+            }
+            else {
+                functions.logger.error("Error getting Spotify playlist tracks", error);
+                res.status(502);
+                res.send(error);
             }
         });
 });
@@ -182,6 +191,9 @@ router.get('/:playlistId/tracks', (req, res) => {
 // responds with more in-depth info about a specific playlist if successful
 router.get('/:playlistId', (req, res) => {
     var playlistId = req.params.playlistId;
+
+    functions.logger.debug(`Requested details about Spotify playlist ${playlistId}`);
+
     // @ts-ignore 
     var searchParams = new URLSearchParams(req.query);
 
@@ -192,12 +204,15 @@ router.get('/:playlistId', (req, res) => {
             res.status(200).send(playlist);
         })
         .catch(error => {
-            console.log("Error getting Spotify playlist by id.");
-            console.log(error);
-
             if (error.response) {
+                functions.logger.error("Error getting Spotify playlist tracks", error.response.status, error.response.data);
                 res.status(error.response.status);
                 res.send(error.response.data);
+            }
+            else {
+                functions.logger.error("Error getting Spotify playlist tracks", error);
+                res.status(502);
+                res.send(error);
             }
         });
 });

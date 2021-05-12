@@ -3,8 +3,9 @@
  */
 
 import { WriteResult } from "@google-cloud/firestore";
-import { SpotifyAuth } from "../adt/spotify_auth";
+import * as functions from 'firebase-functions';
 
+import { SpotifyAuth } from "../adt/spotify_auth";
 import { firestore } from '../../../firebase/firebase_config';
 import * as firestoreUsers from './users';
 
@@ -20,15 +21,18 @@ const COLLECTION_NAME = 'spotify_users';
  */
 export async function getUserAuth(userId: string): Promise<SpotifyAuth> {
     
-    if (authCache.userId) { // we have this auth data cached
+    if (authCache[userId]) { // we have this auth data cached
         return authCache[userId];
     }
     else {
         try {
             let docSnap = await firestore.collection(COLLECTION_NAME).doc(userId).get();
             if (docSnap.exists && docSnap.data()?.auth) {
-                console.log(`Cached auth data for Spotify user=${userId} (${JSON.stringify(docSnap.get('auth'))})`);
-                
+                functions.logger.debug(
+                    `Cached auth data for Spotify user=${userId}`, 
+                    docSnap.get('auth')
+                );
+
                 let authSnap = docSnap.get('auth');
 
                 let authData: SpotifyAuth = {
@@ -49,7 +53,6 @@ export async function getUserAuth(userId: string): Promise<SpotifyAuth> {
             }
         }
         catch (e) {
-            console.log(`getUserAuth error: ${JSON.stringify(e)}`);
             return Promise.reject(e);
         }
     }
@@ -67,7 +70,7 @@ export async function putUserAuth(userId: string, authObj: SpotifyAuth): Promise
 
     // first cache it
     authCache[userId] = authObj;
-    console.log(`Cached auth data for Spotify user=${userId} (${JSON.stringify(authObj)})`);
+    functions.logger.debug(`Cached auth data for Spotify user=${userId} (${JSON.stringify(authObj)})`);
 
     // then put it in firestore
     let doc = firestore
@@ -86,7 +89,6 @@ export async function putUserAuth(userId: string, authObj: SpotifyAuth): Promise
         }
     }
     catch (e) {
-        console.log(`putUserAuth error: ${JSON.stringify(e)}`);
         return Promise.reject(e);
     }
 };

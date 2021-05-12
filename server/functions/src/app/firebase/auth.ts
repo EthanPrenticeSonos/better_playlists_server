@@ -91,11 +91,9 @@ export async function getSpotifyUserId(firebaseUserId: string): Promise<string> 
 // `Authorization: Bearer <Firebase ID Token>`.
 // when decoded successfully, the ID Token content will be added as `req.headers.user`.
 export async function validateFirebaseIdToken(req: Request, res: Response, next: Function) {
-    functions.logger.log('Check if request is authorized with Firebase ID token');
+    functions.logger.debug('Checking if request is authorized with Firebase ID token');
   
     let authHeader = req.get('authorization');
-
-    functions.logger.debug('Received authorization header: ', authHeader);
 
     if (!(authHeader && authHeader.startsWith('Bearer ')) && !req.cookies?.__session) {
         functions.logger.error(
@@ -110,11 +108,11 @@ export async function validateFirebaseIdToken(req: Request, res: Response, next:
   
     let idToken: string;
     if (authHeader?.startsWith('Bearer ')) {
-        functions.logger.log('Found "Authorization" header');
+        functions.logger.debug('Found "Authorization" header');
         // Read the ID Token from the Authorization header.
         idToken = authHeader.split('Bearer ')[1];
     } else if (req.cookies) {
-        functions.logger.log('Found "__session" cookie');
+        functions.logger.debug('Found "__session" cookie');
         // Read the ID Token from cookie.
         idToken = req.cookies.__session;
     } else {
@@ -125,7 +123,7 @@ export async function validateFirebaseIdToken(req: Request, res: Response, next:
   
     try {
           const decodedIdToken = await admin.auth().verifyIdToken(idToken);
-          functions.logger.log('ID Token correctly decoded', decodedIdToken);
+          functions.logger.debug('ID Token correctly decoded', decodedIdToken);
           req.headers.user = JSON.stringify(decodedIdToken);
           next();
           return;

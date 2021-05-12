@@ -2,6 +2,7 @@
  * Manages the Spotify user functions and caches for Firestore
  */
 import { WriteResult } from "@google-cloud/firestore";
+import * as functions from 'firebase-functions';
 
 import { SpotifyAuth } from "../adt/spotify_auth";
 import { firestore } from '../../../firebase/firebase_config';
@@ -27,7 +28,10 @@ export async function createUser(userId: string, authObj: SpotifyAuth): Promise<
             return doc.set({
                 'auth': authObj,
                 // playlists: firestore.collection("playlists").ref
-            }, { 'merge': false });
+            }, { 'merge': false }).then((res: any) => {
+                functions.logger.info(`Created document for Firestore user ${userId}`, authObj);
+                return res;
+            });
         }
         else {
             return Promise.reject({

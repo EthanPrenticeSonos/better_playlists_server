@@ -32,6 +32,8 @@ async function isAuthenticated(headers: Headers): Promise<boolean> {
     // test if we can get the user
     let spotifyUrl = new url.URL('https://api.spotify.com/v1/me');
 
+    functions.logger.debug(`Redirecting request to ${spotifyUrl.href}`);
+
     try {
         // if request is successful, we are authenticated with Spotify
         await axios.get(spotifyUrl.href, {
@@ -160,7 +162,7 @@ async function authenticate(req: express.Request, res: express.Response) {
  * @returns Promise associated with handling the authentication request
  */
 function authenticateCode(authCode: string, redirectUri: string, codeVerifier: string) {
-    console.log(`Authenticating spotify user using auth code`);
+    functions.logger.debug(`Authenticating spotify user using auth code`);
 
     const params = new URLSearchParams();
     params.append("client_id", SPOTIFY_CLIENT_ID);
@@ -181,7 +183,7 @@ function authenticateCode(authCode: string, redirectUri: string, codeVerifier: s
  * @returns Promise associated with handling the authentication request (if refresh token does not exist, returns rejected Promise instead)
  */
 async function authenticateRefresh(userId:  string) {
-    console.log(`Authenticating spotify user ${userId} using refresh token`);
+    functions.logger.debug(`Authenticating spotify user ${userId} using refresh token`);
 
     const params = new URLSearchParams();
     params.append("client_id", SPOTIFY_CLIENT_ID);
@@ -194,7 +196,6 @@ async function authenticateRefresh(userId:  string) {
         return handleAuthRequest(params);
     }
     catch (e) {
-        console.log(`authenticateRefresh error: (${e.response.status}) ${JSON.stringify(e.response.data)}`);
         return Promise.reject(e);
     }
 }
@@ -223,15 +224,13 @@ async function handleAuthRequest(params: URLSearchParams): Promise<SpotifyUserAu
         paramEntries[pair[0]] = pair[1];
     }
 
-    console.log(`Sending auth request with params: ${JSON.stringify(paramEntries)}`);
+    functions.logger.debug(`Sending Spotify authentication request with params: ${JSON.stringify(paramEntries)}`);
 
 
     try {
         let authResponse = await axios.post(tokenUrl, params, {
             'headers': headers
         });
-
-        console.log(`handling auth response: ${JSON.stringify(authResponse.data)}`);
 
         var expiresAt = util.convertDateToUtc(new Date());
         expiresAt.setSeconds(expiresAt.getSeconds() + 0.85 * authResponse.data.expires_in);
@@ -242,18 +241,12 @@ async function handleAuthRequest(params: URLSearchParams): Promise<SpotifyUserAu
             'expires_at': expiresAt
         };
 
-
         // update scopes on initial authenticaton with code
         if (grantType == 'authorization_code') {
             authData.scopes = REQUIRED_SCOPES;
         }
 
-        try {
-            return await updateUserAuth(authData);
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return await updateUserAuth(authData);
     }
     catch (e) {
         return Promise.reject(e);
