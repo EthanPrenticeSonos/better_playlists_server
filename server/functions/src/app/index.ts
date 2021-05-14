@@ -10,7 +10,7 @@ import * as spotifyRoutes from './services/spotify/routes/spotify_routes';
 import * as firebaseAuth from './firebase/auth';
 
 
-const app = express();
+export const app = express();
 
 app.use(bodyParser.raw());
 app.use(bodyParser.json());
@@ -37,12 +37,9 @@ if (util.isLocal) {
 }
 
 
-exports.app = functions.https.onRequest(app);
-
-
 /*
     TRIGGERS
 */
-exports.onUserCreate = functions.auth.user().onCreate((user) => {
+export const onUserCreate = functions.auth.user().onCreate((user) => {
     return firebaseAuth.createUserFromFirebaseAuth(user.uid);
 });

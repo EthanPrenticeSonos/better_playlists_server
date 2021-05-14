@@ -3,7 +3,7 @@ import * as url from 'url';
 import * as functions from 'firebase-functions';
 import axios from 'axios';
 
-import { Headers } from '../../../adt/headers'
+import { Headers } from '../../../adt/routing/headers'
 import * as util from '../../../util/util';
 import * as config from '../../../config';
 

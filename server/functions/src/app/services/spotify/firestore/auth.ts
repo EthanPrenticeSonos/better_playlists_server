@@ -29,7 +29,7 @@ export async function getUserAuth(userId: string): Promise<SpotifyAuth> {
             let docSnap = await firestore.collection(COLLECTION_NAME).doc(userId).get();
             if (docSnap.exists && docSnap.data()?.auth) {
                 functions.logger.debug(
-                    `Cached auth data for Spotify user=${userId}`, 
+                    `Cached fetched auth data for Spotify user=${userId}`, 
                     docSnap.get('auth')
                 );
 
@@ -70,7 +70,7 @@ export async function putUserAuth(userId: string, authObj: SpotifyAuth): Promise
 
     // first cache it
     authCache[userId] = authObj;
-    functions.logger.debug(`Cached auth data for Spotify user=${userId} (${JSON.stringify(authObj)})`);
+    functions.logger.debug(`Cached new auth data for Spotify user=${userId} (${JSON.stringify(authObj)})`);
 
     // then put it in firestore
     let doc = firestore

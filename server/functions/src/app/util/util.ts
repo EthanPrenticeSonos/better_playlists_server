@@ -1,4 +1,4 @@
-import { Headers } from '../adt/headers';
+import { Headers } from '../adt/routing/headers';
 
 export let isLocal = false;
 process.argv.forEach(function (val, index, array) {

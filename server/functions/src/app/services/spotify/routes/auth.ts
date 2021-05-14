@@ -6,7 +6,7 @@ import { SpotifyAuth } from '../adt/spotify_auth';
 import { SpotifyUserAuth } from '../adt/spotify_user_auth';
 
 import * as util from '../../../util/util';
-import { Headers } from '../../../adt/headers';
+import { Headers } from '../../../adt/routing/headers';
 import * as authFirebase from '../../../firebase/auth';
 import * as spotifyFirestore from '../firestore/spotify_firestore';
 import * as spotifyUsers from './users';
