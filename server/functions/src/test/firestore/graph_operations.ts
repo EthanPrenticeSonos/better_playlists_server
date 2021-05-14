@@ -81,7 +81,7 @@ describe("Playlist Graph Firestore Operations", () => {
             // get from Firestore
             let fetchedDoc = await playlistGraphFirestore.getPlaylistGraphDocument(SERVICE, USER_ID);
             
-            expect(fetchedDoc === graphDocument);
+            expect(fetchedDoc).to.eql(graphDocument);
         });
 
 
@@ -94,7 +94,7 @@ describe("Playlist Graph Firestore Operations", () => {
             let fetchedDoc = await playlistGraphFirestore.getPlaylistGraphDocument(SERVICE, USER_ID);
             
             // expect empty
-            expect(fetchedDoc === {'playlists': {}});
+            expect(fetchedDoc).to.eql({'playlists': {}});
         });
 
     });
@@ -125,7 +125,7 @@ describe("Playlist Graph Firestore Operations", () => {
             }
 
             // expect a single playlist
-            expect(fetchedDoc === expected);
+            expect(fetchedDoc).to.eql(expected);
         });
 
         it("Add pre-existing playlist", async() => {
@@ -158,7 +158,7 @@ describe("Playlist Graph Firestore Operations", () => {
             }
 
             // expect a single playlist
-            expect(fetchedDoc === expected);
+            expect(fetchedDoc).to.eql(expected);
         });
 
 
@@ -173,7 +173,7 @@ describe("Playlist Graph Firestore Operations", () => {
             }
 
             // expect a single playlist
-            expect(fetchedDoc === expected);
+            expect(fetchedDoc).to.eql(expected);
         });
     });
 
@@ -259,10 +259,11 @@ describe("Playlist Graph Firestore Operations", () => {
             
             // make sure dates match the passed in date
             Object.keys(fetchedDoc.playlists).forEach(playlistId => {
-                return fetchedDoc.playlists[playlistId].parents.forEach(parentEdge => {
-                    return expect(parentEdge.after_date == currDate);
+                fetchedDoc.playlists[playlistId].parents.forEach(parentEdge => {
+                    expect(parentEdge.after_date).to.eql(currDate);
                 });
             });
+
         });
     });
 

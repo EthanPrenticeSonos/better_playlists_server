@@ -1,4 +1,4 @@
-import { WriteResult } from '@google-cloud/firestore';
+import { Timestamp, WriteResult } from '@google-cloud/firestore';
 import { Playlist } from '../../firebase/adt/music/playlist';
 import { firestore } from '../../firebase/firebase_config';
 import { GraphDocument, GraphNodeDocument } from '../adt/graph_document';
@@ -33,8 +33,17 @@ export async function getPlaylistGraphDocument(service: string, userId: string):
         let docSnap = await firestore.collection(collectionName).doc(userId).get();
 
         if (docSnap.exists && docSnap.get('playlists')) {
-            let graphDocument: GraphDocument = {'playlists': docSnap.get('playlists')};
-            return graphDocument;
+            let graphDoc: GraphDocument = {'playlists': docSnap.get('playlists')};
+
+            // convert Timestamp to Date
+            for (let playlistId in graphDoc.playlists) {
+                for (let edge of graphDoc.playlists[playlistId].parents.keys()) {
+                    let date = (graphDoc.playlists[playlistId].parents[edge].after_date as unknown as Timestamp).toDate();
+                    graphDoc.playlists[playlistId].parents[edge].after_date = date;
+                }
+            }
+
+            return graphDoc;
         }
         else {
             return Promise.reject({
@@ -136,7 +145,7 @@ export async function removePlaylistsFromGraph(service: string, userId: string, 
             delete graphDoc.playlists[deleteId];
 
             // delete associations
-            for (let playlistId in graphDoc.playlists.keys) {
+            for (let playlistId in graphDoc.playlists) {
                 let parentEdges = graphDoc.playlists[playlistId].parents;
                 parentEdges = parentEdges.filter(edge => edge.id !== deleteId);
                 graphDoc.playlists[playlistId].parents = parentEdges;
@@ -165,9 +174,9 @@ export async function updateGraphEdgeDates(service: string, userId: string, date
     try {
         let graphDoc: GraphDocument = await getPlaylistGraphDocument(service, userId);
 
-        for (let playlistId in graphDoc.playlists.keys) {
-            for (let edge of graphDoc.playlists[playlistId].parents) {
-                edge.after_date = date;
+        for (let playlistId in graphDoc.playlists) {
+            for (let edge of graphDoc.playlists[playlistId].parents.keys()) {
+                graphDoc.playlists[playlistId].parents[edge].after_date = date;
             }
         }
 
