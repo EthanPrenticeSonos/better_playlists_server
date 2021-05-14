@@ -82,6 +82,7 @@ export async function putUserAuth(userId: string, authObj: SpotifyAuth): Promise
         if (docSnap.exists) {
             return doc.set({
                 'auth': authObj,
+                'playlists': {}
             }, { 'merge': true });
         }
         else {

@@ -12,8 +12,6 @@ export class PlaylistGraph {
         [playlistId: string]: PlaylistGraphNode
     } = {};
 
-    rootNodes: PlaylistGraphNode[] = [];
-
     constructor(graphDocument: GraphDocument) {
 
         if (this.hasCycle(graphDocument)) {
@@ -25,13 +23,10 @@ export class PlaylistGraph {
             // generate new subgraph as we haven't visited this node yet
             // then add it to the root nodes
             if (!this.nodeMap[playlistId]) {
-
-                let rootNode = this.nodeDocumentToNode(
+                this.nodeDocumentToNode(
                     graphDocument, 
                     graphDocument.playlists[playlistId]
                 );
-
-                this.rootNodes.push(rootNode);
             }
         }
     }

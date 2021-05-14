@@ -1,4 +1,4 @@
-const Firestore = require('@google-cloud/firestore');
+import { Firestore } from '@google-cloud/firestore';
 import * as admin from 'firebase-admin';
 
 import * as util from '../util/util';
@@ -7,7 +7,7 @@ import * as util from '../util/util';
 const PROJECT_ID = 'betterplaylists-f5b1f';
 
 
-export let firestore: typeof Firestore
+export let firestore: Firestore
 if (util.isLocal) {
     var serviceAccount = require("../../../betterplaylists-f5b1f-firebase-adminsdk-b37df-fabea8905e.json");
     admin.initializeApp({
