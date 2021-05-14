@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { GraphDocument } from '../../app/firebase/adt/playlist_management/graph_document';
+import { GraphDocument } from '../../app/playlist_managment/adt/graph_document';
 import { PlaylistOperation } from '../../app/playlist_managment/adt/operations/playlist_operation';
 import { PlaylistOperationType } from '../../app/playlist_managment/adt/operations/playlist_operation_type';
 import { PlaylistGraph } from '../../app/playlist_managment/adt/playlist_graph/playlist_graph';

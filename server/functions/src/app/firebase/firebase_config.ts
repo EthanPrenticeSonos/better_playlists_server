@@ -9,7 +9,7 @@ const PROJECT_ID = 'betterplaylists-f5b1f';
 
 export let firestore: Firestore
 if (util.isLocal) {
-    var serviceAccount = require("../../../betterplaylists-f5b1f-firebase-adminsdk-b37df-fabea8905e.json");
+    var serviceAccount = require("../../../../betterplaylists-f5b1f-firebase-adminsdk-b37df-fabea8905e.json");
     admin.initializeApp({
         'credential': admin.credential.cert(serviceAccount)
     });

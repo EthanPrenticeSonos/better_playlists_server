@@ -1,4 +1,4 @@
-import { GraphDocument, GraphNodeDocument } from "../../../firebase/adt/playlist_management/graph_document";
+import { GraphDocument, GraphNodeDocument } from "../graph_document";
 import { PlaylistOperation } from "../operations/playlist_operation";
 import { PlaylistOperationType } from "../operations/playlist_operation_type";
 import { PlaylistGraphNode } from "./playlist_graph_node";

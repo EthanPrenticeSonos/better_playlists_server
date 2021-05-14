@@ -9,7 +9,7 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "local": "node app/index.js --local",
-    "test": "mocha --require ts-node/register --recursive 'src/test/**/*.ts'",
+    "test": "mocha --require ts-node/register --recursive 'src/test/**/*.ts' --local",
     "build": "npm run lint && tsc",
     "lint": "eslint"
   },
