@@ -22,15 +22,3 @@ export function filterHeaders(headers: Headers): Headers {
 
     return headers;
 };
-
-
-export function convertDateToUtc(date: Date): Date {
-    return new Date(
-        date.getUTCFullYear(), 
-        date.getUTCMonth(),
-        date.getUTCDate(), 
-        date.getUTCHours(), 
-        date.getUTCMinutes(), 
-        date.getUTCSeconds()
-    );
-}; 

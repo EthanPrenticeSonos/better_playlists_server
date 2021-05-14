@@ -251,6 +251,7 @@ describe("Playlist Graph Firestore Operations", () => {
             }
 
             let currDate = new Date();
+
             await playlistGraphFirestore.updateGraphEdgeDates(SERVICE, USER_ID, currDate);
 
             // get from Firestore

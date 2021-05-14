@@ -166,15 +166,8 @@ export async function updateGraphEdgeDates(service: string, userId: string, date
         let graphDoc: GraphDocument = await getPlaylistGraphDocument(service, userId);
 
         for (let playlistId in graphDoc.playlists.keys) {
-            console.log(playlistId);
-            try {
-                for (let edge of graphDoc.playlists[playlistId].parents) {
-                    edge.after_date = date;
-                }
-            }
-            catch (e) {
-                console.log(graphDoc.playlists[playlistId]);
-                return Promise.reject(e);
+            for (let edge of graphDoc.playlists[playlistId].parents) {
+                edge.after_date = date;
             }
         }
 

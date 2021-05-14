@@ -232,7 +232,7 @@ async function handleAuthRequest(params: URLSearchParams): Promise<SpotifyUserAu
             'headers': headers
         });
 
-        var expiresAt = util.convertDateToUtc(new Date());
+        var expiresAt = new Date();
         expiresAt.setSeconds(expiresAt.getSeconds() + 0.85 * authResponse.data.expires_in);
         
         var authData: SpotifyAuth = {
@@ -333,7 +333,7 @@ export async function authMiddleware(req: express.Request, res: express.Response
         let spotifyUserId = await authFirebase.getSpotifyUserId(firebaseUserId);
         let authData = await spotifyFirestore.auth.getUserAuth(spotifyUserId);
 
-        var currTime = util.convertDateToUtc(new Date());
+        var currTime = new Date();
 
         // Token has not expired
         if (currTime.getTime() < authData.expires_at.getTime()) {
