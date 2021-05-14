@@ -341,4 +341,48 @@ describe("Playlist Dependency Graph", () => {
 
         expect(operations === expected);
     });
+
+
+    it("Empty Dependency Graph", () => {
+        let graphDocument: GraphDocument = {
+            playlists: { }
+        }
+
+        let playlistGraph = new PlaylistGraph(graphDocument);
+        let operations = playlistGraph.getOrderOfOperations();
+
+        let expected: PlaylistOperation[] = [];
+
+        expect(operations === expected);
+    });
+
+
+    it("Self-Cycle Dependency Graph", () => {
+        let graphDocument: GraphDocument = {
+            playlists: {
+                playlist_a: {
+                    data: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        tracks: [],
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_a'],
+                    parents: [
+                        {
+                            id: 'playlist_a',
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
+                        }
+                    ]
+                }
+            }
+        }
+
+        try {
+            new PlaylistGraph(graphDocument);
+        }
+        catch (e) {
+            expect(e === "Cannot build graph - document contains cycles!")
+        }
+    });
 });
