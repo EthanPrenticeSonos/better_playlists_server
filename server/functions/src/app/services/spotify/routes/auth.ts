@@ -342,6 +342,7 @@ export async function authMiddleware(req: express.Request, res: express.Response
                 // add Spotify Authorization header to request
                 let authHeaderEntry = await getAuthHeaderEntry(spotifyUserId);
                 req.headers['Authorization'] = authHeaderEntry;
+                req.headers['spotify_id'] = spotifyUserId;
                 next();
 
             }
@@ -361,6 +362,7 @@ export async function authMiddleware(req: express.Request, res: express.Response
                 // success -> add Spotify Authorization header to request
                 let authHeaderEntry = await getAuthHeaderEntry(spotifyUserId);
                 req.headers['Authorization'] = authHeaderEntry;
+                req.headers['spotify_id'] = spotifyUserId;
                 next();
             }
             catch (e) {

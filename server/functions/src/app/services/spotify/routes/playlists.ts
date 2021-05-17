@@ -8,6 +8,37 @@ import * as util from '../../../util/util';
 import * as config from '../../../config';
 
 
+const SPOTIFY_TRACK_FIELDS = 
+    `id,` +
+    `name,` +
+    `owner,` +
+    `images,` +
+    `public,` +
+    `collaborative,` +
+    `snapshot_id,` +
+    `tracks(` +
+    `items(` +
+        `added_at,` +
+        `track(` +
+        `album(` +
+            `id,` +
+            `images,` +
+            `name` +
+        `),` +
+        `artists,` +
+        `id,` +
+        `uri,` +
+        `name,` +
+        `track_number,` +
+        `),` +
+    `),` +
+    `limit,` +
+    `next,` +
+    `offset,` +
+    `total,` +
+    `),`;
+
+
 /**
  * Gets the playlists (basic info) followed by the authorized user
  * Calling function must handle errors on promise rejection
@@ -55,19 +86,22 @@ async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers)
  * @param {Object} headers 
  * @returns 
  */
-async function getPlaylistById(playlistId: String, searchParams: URLSearchParams, headers: Headers): Promise<any> {
+async function getPlaylistById(playlistId: String, headers: Headers): Promise<any> {
     let spotifyUrl = new url.URL(`https://api.spotify.com/v1/playlists/${playlistId}`);
 
     let reqConfig = {
         'headers': headers
     };
 
-    spotifyUrl.search = searchParams.toString();
+    spotifyUrl.searchParams.append('fields', SPOTIFY_TRACK_FIELDS);
 
     functions.logger.debug(`Redirecting request to ${spotifyUrl.href}`);
 
     try {
         let playlist = (await axios.get(spotifyUrl.href, reqConfig))!.data;
+
+        // playlist must be owned to edit using Spotify API
+        playlist.can_edit = (playlist.owner.id === headers.user_id);
 
         // change 'next' url to point to server rather than Spotify
         if (playlist?.tracks?.next) {
@@ -95,14 +129,14 @@ async function getPlaylistById(playlistId: String, searchParams: URLSearchParams
  * @param {Object} headers 
  * @returns 
  */
- async function getPlaylistTracksById(playlistId: String, searchParams: URLSearchParams, headers: Headers): Promise<any> {
+ async function getPlaylistTracksById(playlistId: String, headers: Headers): Promise<any> {
     let spotifyUrl = new url.URL(`https://api.spotify.com/v1/users/spotify/playlists/${playlistId}/tracks`);
 
     let reqConfig = {
         'headers': headers
     };
 
-    spotifyUrl.search = searchParams.toString();
+    spotifyUrl.searchParams.append('fields', SPOTIFY_TRACK_FIELDS);
 
     functions.logger.debug(`Redirecting request to ${spotifyUrl.href}`);
 
@@ -169,7 +203,7 @@ router.get('/:playlistId/tracks', (req, res) => {
 
     var headers = util.filterHeaders(req.headers);
 
-    getPlaylistTracksById(playlistId, searchParams, headers)
+    getPlaylistTracksById(playlistId, headers)
         .then(playlistTracks => {
             res.status(200).send(playlistTracks);
         })
@@ -199,7 +233,7 @@ router.get('/:playlistId', (req, res) => {
 
     var headers = util.filterHeaders(req.headers);
 
-    getPlaylistById(playlistId, searchParams, headers)
+    getPlaylistById(playlistId, headers)
         .then(playlist => {
             res.status(200).send(playlist);
         })
