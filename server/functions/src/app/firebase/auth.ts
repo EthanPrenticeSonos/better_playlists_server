@@ -91,6 +91,8 @@ export async function getSpotifyUserId(firebaseUserId: string): Promise<string> 
 // `Authorization: Bearer <Firebase ID Token>`.
 // when decoded successfully, the ID Token content will be added as `req.headers.user`.
 export async function validateFirebaseIdToken(req: Request, res: Response, next: Function) {
+    functions.logger.debug(`Received request with path: ${req.originalUrl}`);
+    
     functions.logger.debug('Checking if request is authorized with Firebase ID token');
   
     let authHeader = req.get('authorization');

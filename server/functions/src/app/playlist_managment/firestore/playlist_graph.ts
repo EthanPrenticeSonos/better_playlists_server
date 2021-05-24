@@ -1,5 +1,5 @@
 import { Timestamp, WriteResult } from '@google-cloud/firestore';
-import { Playlist } from '../../firebase/adt/music/playlist';
+import { PlaylistRef } from '../../firebase/adt/music/playlist';
 import { firestore } from '../../firebase/firebase_config';
 import { GraphDocument, GraphNodeDocument } from '../adt/graph_document';
 import { PlaylistGraph } from '../adt/playlist_graph/playlist_graph';
@@ -32,24 +32,33 @@ export async function getPlaylistGraphDocument(service: string, userId: string):
     try {
         let docSnap = await firestore.collection(collectionName).doc(userId).get();
 
-        if (docSnap.exists && docSnap.get('playlists')) {
-            let graphDoc: GraphDocument = {'playlists': docSnap.get('playlists')};
+        if (docSnap.exists && docSnap.get('graph')) {
+            let graphDoc: GraphDocument = docSnap.get('graph');
 
             // convert Timestamp to Date
-            for (let playlistId in graphDoc.playlists) {
-                for (let edge of graphDoc.playlists[playlistId].parents.keys()) {
-                    let date = (graphDoc.playlists[playlistId].parents[edge].after_date as unknown as Timestamp).toDate();
-                    graphDoc.playlists[playlistId].parents[edge].after_date = date;
+            for (let playlistId in graphDoc) {
+                for (let edge = 0; edge < graphDoc[playlistId].parents.length; ++edge) {
+                    let date = (graphDoc[playlistId].parents[edge].after_date as unknown as Timestamp).toDate();
+                    graphDoc[playlistId].parents[edge].after_date = date;
                 }
             }
 
             return graphDoc;
         }
         else {
-            return Promise.reject({
-                status: 404,
-                error: "User does not exist or document is malformed (missing playlists)"
-            });
+            if (!docSnap.exists) {
+                return Promise.reject({
+                    status: 404,
+                    error: "User does not exist"
+                });
+            }
+            else {
+                return Promise.reject({
+                    status: 404,
+                    error: "User document is malformed.  (Missing 'graph')"
+                });
+            }
+
         }
     }
     catch (e) {
@@ -61,9 +70,11 @@ export async function getPlaylistGraphDocument(service: string, userId: string):
 export async function putPlaylistGraphDocument(service: string, userId: string, graphDoc: GraphDocument): Promise<WriteResult> {
     let collectionName = serviceCollectionMap[service];
 
+    console.log(graphDoc);
+
     try {
         return await firestore.collection(collectionName).doc(userId).set({
-            'playlists': graphDoc.playlists
+            'graph': graphDoc
         }, { merge: true });
     }
     catch (e) {
@@ -77,7 +88,7 @@ export async function clearPlaylistGraphDocument(service: string, userId: string
 
     try {
         return await firestore.collection(collectionName).doc(userId).set({
-            'playlists': {}
+            'graph': {}
         }, { merge: true });
     }
     catch (e) {
@@ -86,19 +97,19 @@ export async function clearPlaylistGraphDocument(service: string, userId: string
 }
 
 
-export async function addPlaylistToGraph(service: string, userId: string, playlist: Playlist): Promise<WriteResult> {
-    return addPlaylistsToGraph(service, userId, [playlist]);
+export async function addPlaylistToGraph(service: string, userId: string, playlistRef: PlaylistRef): Promise<WriteResult> {
+    return addPlaylistsToGraph(service, userId, [playlistRef]);
 }
 
-export async function addPlaylistsToGraph(service: string, userId: string, playlists: Playlist[]): Promise<WriteResult> {
+export async function addPlaylistsToGraph(service: string, userId: string, playlistRefs: PlaylistRef[]): Promise<WriteResult> {
     let collectionName = serviceCollectionMap[service];
 
     try {
         let doc = firestore.collection(collectionName).doc(userId);
         let graphDocument = await getPlaylistGraphDocument(service, userId);
 
-        for (let playlist of playlists) {
-            if (graphDocument.playlists[playlist.id]) {
+        for (let playlistRef of playlistRefs) {
+            if (graphDocument[playlistRef.id]) {
                 return Promise.reject({
                     'status': 409,
                     'error': 'Playlist already exists in graph!'
@@ -106,16 +117,16 @@ export async function addPlaylistsToGraph(service: string, userId: string, playl
             }
     
             let newNode: GraphNodeDocument = {
-                data: playlist,
+                playlist_ref: playlistRef,
                 children_ids: [],
                 parents: []
             }
 
-            graphDocument.playlists[playlist.id] = newNode;
+            graphDocument[playlistRef.id] = newNode;
         }
 
         return await doc.set({
-            'playlists': graphDocument.playlists
+            'graph': graphDocument
         }, { merge: true });
     }
     catch (e) {
@@ -137,29 +148,29 @@ export async function removePlaylistsFromGraph(service: string, userId: string, 
         for (let deleteId of deleteIds) {
 
             // playlist does not exist in the graph
-            if (!graphDoc.playlists[deleteId]) {
+            if (!graphDoc[deleteId]) {
                 continue;
             }
 
             // delete node
-            delete graphDoc.playlists[deleteId];
+            delete graphDoc[deleteId];
 
             // delete associations
-            for (let playlistId in graphDoc.playlists) {
-                let parentEdges = graphDoc.playlists[playlistId].parents;
+            for (let playlistId in graphDoc) {
+                let parentEdges = graphDoc[playlistId].parents;
                 parentEdges = parentEdges.filter(edge => edge.id !== deleteId);
-                graphDoc.playlists[playlistId].parents = parentEdges;
+                graphDoc[playlistId].parents = parentEdges;
 
-                let childEdges = graphDoc.playlists[playlistId].children_ids;
+                let childEdges = graphDoc[playlistId].children_ids;
                 childEdges = childEdges.filter(edge => edge !== deleteId);
-                graphDoc.playlists[playlistId].children_ids = childEdges;
+                graphDoc[playlistId].children_ids = childEdges;
             }
         }
 
         let doc = firestore.collection(collectionName).doc(userId);
 
         return doc.update({
-            playlists: graphDoc.playlists  
+            'graph': graphDoc  
         });
     }
     catch (e) {
@@ -174,16 +185,16 @@ export async function updateGraphEdgeDates(service: string, userId: string, date
     try {
         let graphDoc: GraphDocument = await getPlaylistGraphDocument(service, userId);
 
-        for (let playlistId in graphDoc.playlists) {
-            for (let edge of graphDoc.playlists[playlistId].parents.keys()) {
-                graphDoc.playlists[playlistId].parents[edge].after_date = date;
+        for (let playlistId in graphDoc) {
+            for (let edge = 0; edge < graphDoc[playlistId].parents.length; ++edge) {
+                graphDoc[playlistId].parents[edge].after_date = date;
             }
         }
 
         let doc = firestore.collection(collectionName).doc(userId);
 
         return doc.update({
-            playlists: graphDoc.playlists
+            'graph': graphDoc
         });
     }
     catch (e) {

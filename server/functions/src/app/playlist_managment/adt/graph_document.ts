@@ -1,13 +1,12 @@
-import { Playlist } from "../../firebase/adt/music/playlist";
+import { PlaylistRef } from "../../firebase/adt/music/playlist";
 
 export interface GraphDocument {
-    playlists: {
-        [playlistId: string]: GraphNodeDocument
-    }
+    [playlistId: string]: GraphNodeDocument
 }
 
 export interface GraphNodeDocument {
-    data: Playlist;
+    is_root?: boolean,
+    playlist_ref: PlaylistRef;
     children_ids: string[];
     parents: {
         id: string,

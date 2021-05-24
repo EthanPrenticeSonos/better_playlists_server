@@ -27,7 +27,7 @@ export async function createUser(userId: string, authObj: SpotifyAuth): Promise<
         if (!docSnap.exists) {
             return doc.set({
                 'auth': authObj,
-                // playlists: firestore.collection("playlists").ref
+                'graph': {}
             }, { 'merge': false }).then((res: any) => {
                 functions.logger.info(`Created document for Firestore user ${userId}`, authObj);
                 return res;

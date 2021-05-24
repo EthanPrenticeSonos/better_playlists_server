@@ -1,11 +1,10 @@
 import * as express from 'express';
-import * as url from 'url';
+import { URL, URLSearchParams } from 'url';
 import * as functions from 'firebase-functions';
 import axios from 'axios';
 
 import { Headers } from '../../../adt/routing/headers'
 import * as util from '../../../util/util';
-import * as config from '../../../config';
 
 
 const SPOTIFY_TRACK_FIELDS = 
@@ -17,26 +16,48 @@ const SPOTIFY_TRACK_FIELDS =
     `collaborative,` +
     `snapshot_id,` +
     `tracks(` +
+        `items(` +
+            `added_at,` +
+            `track(` +
+                `album(` +
+                    `id,` +
+                    `images,` +
+                    `name` +
+                `),` +
+                `artists,` +
+                `id,` +
+                `uri,` +
+                `name,` +
+                `track_number,` +
+            `),` +
+        `),` +
+        `limit,` +
+        `next,` +
+        `offset,` +
+        `total` + 
+    `)`;
+
+
+const SPOTIFY_TRACKS_ONLY_FIELDS = 
     `items(` +
         `added_at,` +
         `track(` +
-        `album(` +
+            `album(` +
+                `id,` +
+                `images,` +
+                `name` +
+            `),` +
+            `artists,` +
             `id,` +
-            `images,` +
-            `name` +
-        `),` +
-        `artists,` +
-        `id,` +
-        `uri,` +
-        `name,` +
-        `track_number,` +
+            `uri,` +
+            `name,` +
+            `track_number,` +
         `),` +
     `),` +
     `limit,` +
     `next,` +
     `offset,` +
-    `total,` +
-    `),`;
+    `total`;
 
 
 /**
@@ -48,7 +69,7 @@ const SPOTIFY_TRACK_FIELDS =
  * @returns Promise associated with getting the playlists (promise returns playlists on success)
  */
 async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers): Promise<any> {
-    var spotifyUrl = new url.URL('https://api.spotify.com/v1/me/playlists');
+    var spotifyUrl = new URL('https://api.spotify.com/v1/me/playlists');
 
     var reqConfig = {
         'headers': headers
@@ -62,10 +83,9 @@ async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers)
         let playlistsRes = await axios.get(spotifyUrl.href, reqConfig);
 
         if (playlistsRes?.data?.next) {
-            var nextUrl = new url.URL(playlistsRes.data.next);
-            nextUrl.host = config.hostUrl;
-            nextUrl.pathname = '/spotify/playlists/me';
-            playlistsRes.data.next = nextUrl.href;
+            let nextUrl = new URL(playlistsRes.data.next);
+            let proxiedUrl = util.getProxyUrl(nextUrl, 'spotify/playlists/me');
+            playlistsRes.data.next = proxiedUrl.href;
         }
 
         return playlistsRes.data;
@@ -87,7 +107,7 @@ async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers)
  * @returns 
  */
 async function getPlaylistById(playlistId: String, headers: Headers): Promise<any> {
-    let spotifyUrl = new url.URL(`https://api.spotify.com/v1/playlists/${playlistId}`);
+    let spotifyUrl = new URL(`https://api.spotify.com/v1/playlists/${playlistId}`);
 
     let reqConfig = {
         'headers': headers
@@ -105,10 +125,9 @@ async function getPlaylistById(playlistId: String, headers: Headers): Promise<an
 
         // change 'next' url to point to server rather than Spotify
         if (playlist?.tracks?.next) {
-            var nextUrl = new url.URL(playlist.tracks.next);
-            nextUrl.host = config.hostUrl;
-            nextUrl.pathname = `/spotify/playlists/${playlistId}/tracks`;
-            playlist.tracks.next = nextUrl.href;
+            let nextUrl = new URL(playlist.tracks.next);
+            let proxiedUrl = util.getProxyUrl(nextUrl, `spotify/playlists/${playlistId}/tracks`);
+            playlist.tracks.next = proxiedUrl.href;
         }
 
         return playlist;
@@ -129,14 +148,19 @@ async function getPlaylistById(playlistId: String, headers: Headers): Promise<an
  * @param {Object} headers 
  * @returns 
  */
- async function getPlaylistTracksById(playlistId: String, headers: Headers): Promise<any> {
-    let spotifyUrl = new url.URL(`https://api.spotify.com/v1/users/spotify/playlists/${playlistId}/tracks`);
+ async function getPlaylistTracksById(playlistId: String, headers: Headers, searchParams: URLSearchParams): Promise<any> {
+    let spotifyUrl = new URL(`https://api.spotify.com/v1/users/spotify/playlists/${playlistId}/tracks`);
 
     let reqConfig = {
         'headers': headers
     };
 
-    spotifyUrl.searchParams.append('fields', SPOTIFY_TRACK_FIELDS);
+    for (let param in searchParams.entries()) {
+        param[0]
+    }
+
+    spotifyUrl.search = searchParams.toString();
+    spotifyUrl.searchParams.append('fields', SPOTIFY_TRACKS_ONLY_FIELDS);
 
     functions.logger.debug(`Redirecting request to ${spotifyUrl.href}`);
 
@@ -144,11 +168,10 @@ async function getPlaylistById(playlistId: String, headers: Headers): Promise<an
         let playlistTracks = (await axios.get(spotifyUrl.href, reqConfig))!.data;
 
         // change 'next' url to point to server rather than Spotify
-        if (playlistTracks?.next) {
-            var nextUrl = new url.URL(playlistTracks.next);
-            nextUrl.host = config.hostUrl;
-            nextUrl.pathname = `/spotify/playlists/${playlistId}/tracks`;
-            playlistTracks.next = nextUrl.href;
+        if (playlistTracks.next) {
+            let nextUrl = new URL(playlistTracks.next);
+            let proxiedUrl = util.getProxyUrl(nextUrl, `spotify/playlists/${playlistId}/tracks`);
+            playlistTracks.next = proxiedUrl.href;
         }
 
         return playlistTracks;
@@ -203,7 +226,7 @@ router.get('/:playlistId/tracks', (req, res) => {
 
     var headers = util.filterHeaders(req.headers);
 
-    getPlaylistTracksById(playlistId, headers)
+    getPlaylistTracksById(playlistId, headers, searchParams)
         .then(playlistTracks => {
             res.status(200).send(playlistTracks);
         })

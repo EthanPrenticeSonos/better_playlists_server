@@ -12,8 +12,8 @@ router.use('/auth', authRouter);
 
 router.use('/playlists', authMiddleware);
 router.use('/users', authMiddleware);
+router.use('/management', authMiddleware);
 
 router.use('/playlists', playlistRouter);
 router.use('/users', userRouter);
-
-router.use('/', playlistMgmtRouter);
+router.use('/management', playlistMgmtRouter);

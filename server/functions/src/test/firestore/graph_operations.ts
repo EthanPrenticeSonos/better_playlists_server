@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Playlist } from '../../app/firebase/adt/music/playlist';
+import { PlaylistRef } from '../../app/firebase/adt/music/playlist';
 import { GraphDocument } from '../../app/playlist_managment/adt/graph_document';
 import * as playlistGraphFirestore from '../../app/playlist_managment/firestore/playlist_graph';
 
@@ -13,66 +13,61 @@ describe("Playlist Graph Firestore Operations", () => {
 
         it("Basic creation & fetching", async() => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
-                            id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_b',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            }
-                        ]
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
                     },
-    
-                    playlist_b: {
-                        data: {
+                    children_ids: [],
+                    parents: [
+                        {
                             id: 'playlist_b',
-                            name: 'Playlist B',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_a'],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
-                            }
-                        ]
-                    },
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
+                        }
+                    ]
+                },
     
-                    playlist_c: {
-                        data: {
-                            id: 'playlist_c',
-                            name: 'Playlist C',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))
-                            }
-                        ]
+                playlist_b: {
+                    playlist_ref: {
+                        id: 'playlist_b',
+                        name: 'Playlist B',
+                        can_edit: true
                     },
-    
-                    playlist_d: {
-                        data: {
+                    children_ids: ['playlist_a'],
+                    parents: [
+                        {
                             id: 'playlist_d',
-                            name: 'Playlist D',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_b', 'playlist_c'],
-                        parents: []
+                            after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_c: {
+                    playlist_ref: {
+                        id: 'playlist_c',
+                        name: 'Playlist C',
+                        can_edit: true
                     },
-                }
+                    children_ids: [],
+                    parents: [
+                        {
+                            id: 'playlist_d',
+                            after_date: new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_d: {
+                    playlist_ref: {
+                        id: 'playlist_d',
+                        name: 'Playlist D',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_b', 'playlist_c'],
+                    parents: [],
+                    is_root: true
+                },
             }
     
             // put in Firestore
@@ -94,7 +89,7 @@ describe("Playlist Graph Firestore Operations", () => {
             let fetchedDoc = await playlistGraphFirestore.getPlaylistGraphDocument(SERVICE, USER_ID);
             
             // expect empty
-            expect(fetchedDoc).to.eql({'playlists': {}});
+            expect(fetchedDoc).to.eql({'graph': {}});
         });
 
     });
@@ -102,25 +97,22 @@ describe("Playlist Graph Firestore Operations", () => {
 
     describe("Adding & removing playlists", () => {
         it("Add playlist", async() => {
-            let playlist: Playlist = {
+            let playlistRef: PlaylistRef = {
                 id: 'test_playlist_add',
                 name: 'Test Playlist Add',
-                tracks: [],
                 can_edit: false
             }
 
-            await playlistGraphFirestore.addPlaylistToGraph(SERVICE, USER_ID, playlist);
+            await playlistGraphFirestore.addPlaylistToGraph(SERVICE, USER_ID, playlistRef);
 
             // get from Firestore
             let fetchedDoc = await playlistGraphFirestore.getPlaylistGraphDocument(SERVICE, USER_ID);
             
             let expected: GraphDocument = {
-                playlists: {
-                    'test_playlist_add': {
-                        data: playlist,
-                        children_ids: [],
-                        parents: []
-                    }
+                'test_playlist_add': {
+                    playlist_ref: playlistRef,
+                    children_ids: [],
+                    parents: []
                 }
             }
 
@@ -129,15 +121,14 @@ describe("Playlist Graph Firestore Operations", () => {
         });
 
         it("Add pre-existing playlist", async() => {
-            let playlist: Playlist = {
+            let playlistRef: PlaylistRef = {
                 id: 'test_playlist_add',
                 name: 'Test Playlist Add',
-                tracks: [],
                 can_edit: false
             }
 
             try {
-                await playlistGraphFirestore.addPlaylistToGraph(SERVICE, USER_ID, playlist);
+                await playlistGraphFirestore.addPlaylistToGraph(SERVICE, USER_ID, playlistRef);
             }
             catch (e) {
                 expect(e === {
@@ -153,9 +144,7 @@ describe("Playlist Graph Firestore Operations", () => {
             // get from Firestore
             let fetchedDoc = await playlistGraphFirestore.getPlaylistGraphDocument(SERVICE, USER_ID);
             
-            let expected: GraphDocument = {
-                playlists: { }
-            }
+            let expected: GraphDocument = { };
 
             // expect a single playlist
             expect(fetchedDoc).to.eql(expected);
@@ -168,9 +157,7 @@ describe("Playlist Graph Firestore Operations", () => {
             // get from Firestore
             let fetchedDoc = await playlistGraphFirestore.getPlaylistGraphDocument(SERVICE, USER_ID);
             
-            let expected: GraphDocument = {
-                playlists: { }
-            }
+            let expected: GraphDocument = { };
 
             // expect a single playlist
             expect(fetchedDoc).to.eql(expected);
@@ -180,66 +167,61 @@ describe("Playlist Graph Firestore Operations", () => {
     describe("Updating Edges", () => {
         it("Update edge dates", async () => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
-                            id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_b',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            }
-                        ]
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
                     },
-    
-                    playlist_b: {
-                        data: {
+                    children_ids: [],
+                    parents: [
+                        {
                             id: 'playlist_b',
-                            name: 'Playlist B',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_a'],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
-                            }
-                        ]
-                    },
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
+                        }
+                    ]
+                },
     
-                    playlist_c: {
-                        data: {
-                            id: 'playlist_c',
-                            name: 'Playlist C',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))
-                            }
-                        ]
+                playlist_b: {
+                    playlist_ref: {
+                        id: 'playlist_b',
+                        name: 'Playlist B',
+                        can_edit: true
                     },
-    
-                    playlist_d: {
-                        data: {
+                    children_ids: ['playlist_a'],
+                    parents: [
+                        {
                             id: 'playlist_d',
-                            name: 'Playlist D',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_b', 'playlist_c'],
-                        parents: []
+                            after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_c: {
+                    playlist_ref: {
+                        id: 'playlist_c',
+                        name: 'Playlist C',
+                        can_edit: true
                     },
-                }
+                    children_ids: [],
+                    parents: [
+                        {
+                            id: 'playlist_d',
+                            after_date: new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_d: {
+                    playlist_ref: {
+                        id: 'playlist_d',
+                        name: 'Playlist D',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_b', 'playlist_c'],
+                    parents: [],
+                    is_root: true
+                },
             }
     
             try {
@@ -258,8 +240,8 @@ describe("Playlist Graph Firestore Operations", () => {
             let fetchedDoc = await playlistGraphFirestore.getPlaylistGraphDocument(SERVICE, USER_ID);
             
             // make sure dates match the passed in date
-            Object.keys(fetchedDoc.playlists).forEach(playlistId => {
-                fetchedDoc.playlists[playlistId].parents.forEach(parentEdge => {
+            Object.keys(fetchedDoc).forEach(playlistId => {
+                fetchedDoc[playlistId].parents.forEach(parentEdge => {
                     expect(parentEdge.after_date).to.eql(currDate);
                 });
             });

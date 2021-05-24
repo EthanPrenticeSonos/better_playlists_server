@@ -1,5 +1,5 @@
 import * as express from 'express';
-import * as url from 'url';
+import { URL, URLSearchParams } from 'url';
 import * as functions from 'firebase-functions';
 import axios from 'axios';
 import { SpotifyAuth } from '../adt/spotify_auth';
@@ -10,6 +10,8 @@ import { Headers } from '../../../adt/routing/headers';
 import * as authFirebase from '../../../firebase/auth';
 import * as spotifyFirestore from '../firestore/spotify_firestore';
 import * as spotifyUsers from './users';
+import * as spotifyAuth from '../firestore/auth';
+
 
 
 const SPOTIFY_CLIENT_ID = "79cde8abd53b43058474f611783fdf9b";
@@ -30,7 +32,7 @@ const REQUIRED_SCOPES = [
  */
 async function isAuthenticated(headers: Headers): Promise<boolean> {
     // test if we can get the user
-    let spotifyUrl = new url.URL('https://api.spotify.com/v1/me');
+    let spotifyUrl = new URL('https://api.spotify.com/v1/me');
 
     functions.logger.debug(`Redirecting request to ${spotifyUrl.href}`);
 
@@ -74,7 +76,7 @@ async function isAuthenticated(headers: Headers): Promise<boolean> {
  */
 function authorize(req: express.Request, res: express.Response) {
     // forward to Spotify service
-    let redirectUrl = new url.URL("https://accounts.spotify.com/authorize");
+    let redirectUrl = new URL("https://accounts.spotify.com/authorize");
     
     // @ts-ignore
     let params = new URLSearchParams(req.query);
@@ -182,7 +184,27 @@ function authenticateCode(authCode: string, redirectUri: string, codeVerifier: s
  * @param {string} userId id of the Spotify user to authenticate
  * @returns Promise associated with handling the authentication request (if refresh token does not exist, returns rejected Promise instead)
  */
-async function authenticateRefresh(userId:  string) {
+async function authenticateRefresh(userId: string, authData: SpotifyAuth) {    
+    if (authData.locked) { // auth data is already being updated - do nothing
+        try {
+            spotifyFirestore.auth.waitOnAuthLocked(userId);
+            return;
+        }
+        catch (e) {
+            functions.logger.error("Spotify waitOnAuthLocked error", {exception: e});
+            return Promise.reject(e);
+        }
+    }
+    else {
+        authData.locked = true;
+        try {
+            await spotifyAuth.putUserAuth(userId, authData);
+        }
+        catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
     functions.logger.debug(`Authenticating spotify user ${userId} using refresh token`);
 
     const params = new URLSearchParams();
@@ -190,12 +212,14 @@ async function authenticateRefresh(userId:  string) {
     params.append("grant_type", "refresh_token");
 
     try {
-        let authData = await spotifyFirestore.auth.getUserAuth(userId);
         params.append("refresh_token", authData.refresh_token);
 
-        return handleAuthRequest(params);
+        return await handleAuthRequest(params);
     }
     catch (e) {
+        // unlock auth on failure - it it already unlocked in handleAuthRequest
+        //   when updated to a new auth object
+        spotifyAuth.unlockAuth(userId);
         return Promise.reject(e);
     }
 }
@@ -215,8 +239,6 @@ async function handleAuthRequest(params: URLSearchParams): Promise<SpotifyUserAu
     let headers = {
         "Content-Type": "application/x-www-form-urlencoded"
     };
-
-    let grantType = params.get("grant_type");
 
     let paramEntries: {[param: string]: string} = {};
     // Display the key/value pairs
@@ -238,13 +260,10 @@ async function handleAuthRequest(params: URLSearchParams): Promise<SpotifyUserAu
         var authData: SpotifyAuth = {
             'access_token': authResponse.data.access_token,
             'refresh_token': authResponse.data.refresh_token,
-            'expires_at': expiresAt
+            'expires_at': expiresAt,
+            'scopes': REQUIRED_SCOPES,
+            'locked': false
         };
-
-        // update scopes on initial authenticaton with code
-        if (grantType == 'authorization_code') {
-            authData.scopes = REQUIRED_SCOPES;
-        }
 
         return await updateUserAuth(authData);
     }
@@ -331,13 +350,14 @@ export async function authMiddleware(req: express.Request, res: express.Response
 
     try {
         let spotifyUserId = await authFirebase.getSpotifyUserId(firebaseUserId);
+        functions.logger.debug(`Fetched Spotify ID=${spotifyUserId} for Firebase user=${firebaseUserId}`);
         let authData = await spotifyFirestore.auth.getUserAuth(spotifyUserId);
 
         var currTime = new Date();
 
         // Token has not expired
         if (currTime.getTime() < authData.expires_at.getTime()) {
-            if (authData.scopes && isScopesValid(authData.scopes!)) {
+            if (authData.scopes && isScopesValid(authData.scopes)) {
 
                 // add Spotify Authorization header to request
                 let authHeaderEntry = await getAuthHeaderEntry(spotifyUserId);
@@ -347,17 +367,21 @@ export async function authMiddleware(req: express.Request, res: express.Response
 
             }
             else { // More required scopes than provided with token, re-authorize!
+                functions.logger.debug("Client must re-authenticate with Spotify.  Requires broader scopes.", {
+                    'auth_data': authData,
+                    'required_scopes': REQUIRED_SCOPES
+                });
                 res.status(401);
                 res.send({
                     'error': 'invalid_grant',
-                    'error_description': 'Refresh token revoked'
+                    'error_description': 'Refresh token revoked (requires broader scope)'
                 });
             }
         }
         else { // Token has expired - refresh it
 
             try {
-                await authenticateRefresh(spotifyUserId);
+                await authenticateRefresh(spotifyUserId, authData);                
 
                 // success -> add Spotify Authorization header to request
                 let authHeaderEntry = await getAuthHeaderEntry(spotifyUserId);

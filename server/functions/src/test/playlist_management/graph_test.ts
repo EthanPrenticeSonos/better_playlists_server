@@ -9,66 +9,60 @@ describe("Playlist Dependency Graph", () => {
     describe("Getting order of operations", () => {
         it("Basic Dependency Graph", () => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
-                            id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_b',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            }
-                        ]
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
                     },
-    
-                    playlist_b: {
-                        data: {
+                    children_ids: [],
+                    parents: [
+                        {
                             id: 'playlist_b',
-                            name: 'Playlist B',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_a'],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
-                            }
-                        ]
-                    },
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
+                        }
+                    ]
+                },
     
-                    playlist_c: {
-                        data: {
-                            id: 'playlist_c',
-                            name: 'Playlist C',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))
-                            }
-                        ]
+                playlist_b: {
+                    playlist_ref: {
+                        id: 'playlist_b',
+                        name: 'Playlist B',
+                        can_edit: true
                     },
-    
-                    playlist_d: {
-                        data: {
+                    children_ids: ['playlist_a'],
+                    parents: [
+                        {
                             id: 'playlist_d',
-                            name: 'Playlist D',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_b', 'playlist_c'],
-                        parents: []
+                            after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_c: {
+                    playlist_ref: {
+                        id: 'playlist_c',
+                        name: 'Playlist C',
+                        can_edit: true
                     },
-                }
+                    children_ids: [],
+                    parents: [
+                        {
+                            id: 'playlist_d',
+                            after_date: new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_d: {
+                    playlist_ref: {
+                        id: 'playlist_d',
+                        name: 'Playlist D',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_b', 'playlist_c'],
+                    parents: []
+                },
             }
     
     
@@ -89,96 +83,88 @@ describe("Playlist Dependency Graph", () => {
 
         it("Advanced Dependency Graph", () => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
-                            id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            }
-                        ]
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
                     },
-    
-                    playlist_b: {
-                        data: {
-                            id: 'playlist_b',
-                            name: 'Playlist B',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
-                            },{
-                                id: 'playlist_e',
-                                after_date: new Date(Date.parse('01 Jan 1970 4:30:00 GMT'))
-                            }
-                        ]
-                    },
-    
-                    playlist_c: {
-                        data: {
-                            id: 'playlist_c',
-                            name: 'Playlist C',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_e',
-                                after_date: new Date(Date.parse('01 Jan 1970 3:10:00 GMT'))
-                            }
-                        ]
-                    },
-    
-                    playlist_d: {
-                        data: {
+                    children_ids: [],
+                    parents: [
+                        {
                             id: 'playlist_d',
-                            name: 'Playlist D',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_a', 'playlist_b'],
-                        parents: []
-                    },
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
+                        }
+                    ]
+                },
     
-                    playlist_e: {
-                        data: {
+                playlist_b: {
+                    playlist_ref: {
+                        id: 'playlist_b',
+                        name: 'Playlist B',
+                        can_edit: true
+                    },
+                    children_ids: [],
+                    parents: [
+                        {
+                            id: 'playlist_d',
+                            after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
+                        },{
                             id: 'playlist_e',
-                            name: 'Playlist E',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_b', 'playlist_c'],
-                        parents: [
-                            {
-                                id: 'playlist_f',
-                                after_date: new Date(Date.parse('01 Jan 1970 3:10:00 GMT'))
-                            }
-                        ]
-                    },
+                            after_date: new Date(Date.parse('01 Jan 1970 4:30:00 GMT'))
+                        }
+                    ]
+                },
     
-                    playlist_f: {
-                        data: {
-                            id: 'playlist_f',
-                            name: 'Playlist F',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_e'],
-                        parents: []
+                playlist_c: {
+                    playlist_ref: {
+                        id: 'playlist_c',
+                        name: 'Playlist C',
+                        can_edit: true
                     },
-                }
+                    children_ids: [],
+                    parents: [
+                        {
+                            id: 'playlist_e',
+                            after_date: new Date(Date.parse('01 Jan 1970 3:10:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_d: {
+                    playlist_ref: {
+                        id: 'playlist_d',
+                        name: 'Playlist D',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_a', 'playlist_b'],
+                    parents: []
+                },
+    
+                playlist_e: {
+                    playlist_ref: {
+                        id: 'playlist_e',
+                        name: 'Playlist E',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_b', 'playlist_c'],
+                    parents: [
+                        {
+                            id: 'playlist_f',
+                            after_date: new Date(Date.parse('01 Jan 1970 3:10:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_f: {
+                    playlist_ref: {
+                        id: 'playlist_f',
+                        name: 'Playlist F',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_e'],
+                    parents: []
+                },
             }
     
             let playlistGraph = new PlaylistGraph(graphDocument);
@@ -202,76 +188,70 @@ describe("Playlist Dependency Graph", () => {
     
         it("Advanced Dependency Graph 2", () => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
-                            id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: [
-                            {
-                                id: 'playlist_b',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            },
-                            {
-                                id: 'playlist_c',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            },
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            }
-                        ]
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
                     },
-    
-                    playlist_b: {
-                        data: {
+                    children_ids: [],
+                    parents: [
+                        {
                             id: 'playlist_b',
-                            name: 'Playlist B',
-                            tracks: [],
-                            can_edit: true
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
                         },
-                        children_ids: ['playlist_a'],
-                        parents: [
-                            {
-                                id: 'playlist_c',
-                                after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
-                            },{
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 4:30:00 GMT'))
-                            }
-                        ]
-                    },
-    
-                    playlist_c: {
-                        data: {
+                        {
                             id: 'playlist_c',
-                            name: 'Playlist C',
-                            tracks: [],
-                            can_edit: true
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
                         },
-                        children_ids: ['playlist_a', 'playlist_b'],
-                        parents: [
-                            {
-                                id: 'playlist_d',
-                                after_date: new Date(Date.parse('01 Jan 1970 3:10:00 GMT'))
-                            }
-                        ]
-                    },
-    
-                    playlist_d: {
-                        data: {
+                        {
                             id: 'playlist_d',
-                            name: 'Playlist D',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_a', 'playlist_b', 'playlist_c'],
-                        parents: []
-                    }
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_b: {
+                    playlist_ref: {
+                        id: 'playlist_b',
+                        name: 'Playlist B',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_a'],
+                    parents: [
+                        {
+                            id: 'playlist_c',
+                            after_date: new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))
+                        },{
+                            id: 'playlist_d',
+                            after_date: new Date(Date.parse('01 Jan 1970 4:30:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_c: {
+                    playlist_ref: {
+                        id: 'playlist_c',
+                        name: 'Playlist C',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_a', 'playlist_b'],
+                    parents: [
+                        {
+                            id: 'playlist_d',
+                            after_date: new Date(Date.parse('01 Jan 1970 3:10:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_d: {
+                    playlist_ref: {
+                        id: 'playlist_d',
+                        name: 'Playlist D',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_a', 'playlist_b', 'playlist_c'],
+                    parents: []
                 }
             }
     
@@ -301,38 +281,34 @@ describe("Playlist Dependency Graph", () => {
     describe("Handling cycles", () => {
         it("Basic Cyclic Dependency Graph", () => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
-                            id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_b'],
-                        parents: [
-                            {
-                                id: 'playlist_b',
-                                after_date: new Date(Date.parse('01 Jan 1970 00:00:00 GMT'))
-                            }
-                        ]
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
                     },
-    
-                    playlist_b: {
-                        data: {
+                    children_ids: ['playlist_b'],
+                    parents: [
+                        {
                             id: 'playlist_b',
-                            name: 'Playlist B',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_a'],
-                        parents: [
-                            {
-                                id: 'playlist_a',
-                                after_date: new Date(Date.parse('01 Jan 1970 00:00:00 GMT'))
-                            }
-                        ]
-                    }
+                            after_date: new Date(Date.parse('01 Jan 1970 00:00:00 GMT'))
+                        }
+                    ]
+                },
+    
+                playlist_b: {
+                    playlist_ref: {
+                        id: 'playlist_b',
+                        name: 'Playlist B',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_a'],
+                    parents: [
+                        {
+                            id: 'playlist_a',
+                            after_date: new Date(Date.parse('01 Jan 1970 00:00:00 GMT'))
+                        }
+                    ]
                 }
             };
     
@@ -347,22 +323,19 @@ describe("Playlist Dependency Graph", () => {
 
         it("Self-Cycle Dependency Graph", () => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
+                    },
+                    children_ids: ['playlist_a'],
+                    parents: [
+                        {
                             id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: ['playlist_a'],
-                        parents: [
-                            {
-                                id: 'playlist_a',
-                                after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
-                            }
-                        ]
-                    }
+                            after_date: new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))
+                        }
+                    ]
                 }
             }
     
@@ -378,9 +351,7 @@ describe("Playlist Dependency Graph", () => {
 
     describe("Edge cases", () => {
         it("Empty Dependency Graph", () => {
-            let graphDocument: GraphDocument = {
-                playlists: { }
-            }
+            let graphDocument: GraphDocument = { };
     
             let playlistGraph = new PlaylistGraph(graphDocument);
             let operations = playlistGraph.getOrderOfOperations();
@@ -392,17 +363,14 @@ describe("Playlist Dependency Graph", () => {
 
         it("Single Node Dependency Graph", () => {
             let graphDocument: GraphDocument = {
-                playlists: {
-                    playlist_a: {
-                        data: {
-                            id: 'playlist_a',
-                            name: 'Playlist A',
-                            tracks: [],
-                            can_edit: true
-                        },
-                        children_ids: [],
-                        parents: []
-                    }
+                playlist_a: {
+                    playlist_ref: {
+                        id: 'playlist_a',
+                        name: 'Playlist A',
+                        can_edit: true
+                    },
+                    children_ids: [],
+                    parents: []
                 }
             }
     

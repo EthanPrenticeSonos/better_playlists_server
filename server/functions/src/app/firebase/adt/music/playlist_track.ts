@@ -1,4 +1,4 @@
-import { Playlist } from "./playlist";
+import { PlaylistRef } from "./playlist";
 
 export interface PlaylistTrack {
     id: string;
@@ -7,5 +7,5 @@ export interface PlaylistTrack {
     date_added: Date;
 
     // either the playlist it was added from, or null/undefined
-    origin?: Playlist;
+    origin?: PlaylistRef;
 }

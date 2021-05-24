@@ -18,14 +18,14 @@ export class PlaylistGraph {
             throw "Cannot build graph - document contains cycles!";
         }
 
-        for (let playlistId in graphDocument.playlists) {
+        for (let playlistId in graphDocument) {
 
             // generate new subgraph as we haven't visited this node yet
             // then add it to the root nodes
             if (!this.nodeMap[playlistId]) {
                 this.nodeDocumentToNode(
                     graphDocument, 
-                    graphDocument.playlists[playlistId]
+                    graphDocument[playlistId]
                 );
             }
         }
@@ -43,7 +43,7 @@ export class PlaylistGraph {
         for (let playlistId in this.nodeMap) {
 
             // don't recalculate already calculated operations
-            if (computedPlaylists.has(this.nodeMap[playlistId].playlist.id)) {
+            if (computedPlaylists.has(this.nodeMap[playlistId].playlist_ref.id)) {
                 continue;
             }
 
@@ -53,27 +53,27 @@ export class PlaylistGraph {
 
                 let node = nodeStack[nodeStack.length - 1];
 
-                if (node.children.length > 0 && !processedChildren.has(node.playlist.id)) {
+                if (node.children.length > 0 && !processedChildren.has(node.playlist_ref.id)) {
                     for (let child of node.children) {
                         nodeStack.push(child);
                     }
-                    processedChildren.add(node.playlist.id);
+                    processedChildren.add(node.playlist_ref.id);
                 }
                 else {
                     nodeStack.pop();
 
                     // if already visited, don't visit again
-                    if (computedPlaylists.has(node.playlist.id)) {
+                    if (computedPlaylists.has(node.playlist_ref.id)) {
                         continue;
                     }
-                    computedPlaylists.add(node.playlist.id);
+                    computedPlaylists.add(node.playlist_ref.id);
 
                     for (let parent of node.parents) {
                         for (let opType of [PlaylistOperationType.REMOVE, PlaylistOperationType.ADD]) {
                             operations.push({
                                 type: opType,
-                                source_id: node.playlist.id,
-                                dest_id: parent.node.playlist.id,
+                                source_id: node.playlist_ref.id,
+                                dest_id: parent.node.playlist_ref.id,
                                 after_date: parent.after_date
                             });
                         }
@@ -88,12 +88,12 @@ export class PlaylistGraph {
     hasCycle(graphDocument: GraphDocument): boolean {
 
         function hasCycleUtil(node: GraphNodeDocument, visited: Set<string>, recIds: Set<string>) {
-            if (!visited.has(node.data.id)) {
-                visited.add(node.data.id);
-                recIds.add(node.data.id);
+            if (!visited.has(node.playlist_ref.id)) {
+                visited.add(node.playlist_ref.id);
+                recIds.add(node.playlist_ref.id);
 
                 for (let childId of node.children_ids) {
-                    if (!visited.has(childId) && hasCycleUtil(graphDocument.playlists[childId], visited, recIds)) {
+                    if (!visited.has(childId) && hasCycleUtil(graphDocument[childId], visited, recIds)) {
                         return true;
                     }
                     else if (recIds.has(childId)) {
@@ -101,15 +101,15 @@ export class PlaylistGraph {
                     }
                 }
             }
-            recIds.delete(node.data.id);
+            recIds.delete(node.playlist_ref.id);
             return false;
         }
 
         let visitedIds = new Set<string>();
         let recursionIds = new Set<string>();
 
-        for (let playlistId in graphDocument.playlists) {
-            if (hasCycleUtil(graphDocument.playlists[playlistId], visitedIds, recursionIds)) {
+        for (let playlistId in graphDocument) {
+            if (hasCycleUtil(graphDocument[playlistId], visitedIds, recursionIds)) {
                 return true;
             }
         }
@@ -118,7 +118,7 @@ export class PlaylistGraph {
     }
 
     nodeDocumentToNode(graphDocument: GraphDocument, node: GraphNodeDocument): PlaylistGraphNode {
-        let parents = node.parents.map(parent => graphDocument.playlists[parent.id]);
+        let parents = node.parents.map(parent => graphDocument[parent.id]);
         let parentNodes: PlaylistGraphNode[] = [];
 
         let parentEdges: {[playlistId: string]: Date} = {};
@@ -127,8 +127,8 @@ export class PlaylistGraph {
         }
         
         for (let parent of parents) {
-            if (this.nodeMap[parent.data.id]) { // add cached node
-                parentNodes.push(this.nodeMap[parent.data.id]);
+            if (this.nodeMap[parent.playlist_ref.id]) { // add cached node
+                parentNodes.push(this.nodeMap[parent.playlist_ref.id]);
             }
             else { // calculate new node and cache it
                 let playlistGraphNode = this.nodeDocumentToNode(graphDocument, parent);
@@ -141,17 +141,17 @@ export class PlaylistGraph {
         for (let p of parentNodes) {
             parentNodeEdges.push({
                 node: p,
-                after_date: parentEdges[p.playlist.id]
+                after_date: parentEdges[p.playlist_ref.id]
             });
         }
 
-        let newNode = new PlaylistGraphNode(node.data, parentNodeEdges, []);
+        let newNode = new PlaylistGraphNode(node.playlist_ref, parentNodeEdges, []);
 
         for (let parent of parents) {
-            this.nodeMap[parent.data.id].children.push(newNode);
+            this.nodeMap[parent.playlist_ref.id].children.push(newNode);
         }
 
-        this.nodeMap[node.data.id] = newNode;
+        this.nodeMap[node.playlist_ref.id] = newNode;
         return newNode;
     }
 }

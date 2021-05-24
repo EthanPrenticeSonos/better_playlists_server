@@ -3,9 +3,7 @@ import * as express from 'express';
 import * as morgan from 'morgan';
 import * as bodyParser from 'body-parser';
 import * as cookieParser from 'cookie-parser';
-import * as os from 'os';
 
-import * as util from './util/util';
 import * as spotifyRoutes from './services/spotify/routes/spotify_routes';
 import * as firebaseAuth from './firebase/auth';
 
@@ -27,15 +25,7 @@ app.get('/', (req, res) => {
 });
 
 
-if (util.isLocal) {
-    const port = 3000;
-    app.listen(port, () => {
-        var networkInterfaces = os.networkInterfaces();
-        var lanIp = networkInterfaces['Ethernet'][1]['address'];
-        console.log(`Server is listening at ${lanIp}:${port}`);
-    });
-}
-
+exports.app = functions.https.onRequest(app);
 
 /*
     TRIGGERS

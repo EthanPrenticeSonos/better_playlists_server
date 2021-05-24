@@ -1,10 +1,7 @@
-import { PlaylistTrack } from "./playlist_track";
-
-export interface Playlist {
+export interface PlaylistRef {
     // Hold everything we need to do operations on tracks
     id: string;
     name: string;
-    tracks: PlaylistTrack[];
 
     can_edit: boolean;
 }

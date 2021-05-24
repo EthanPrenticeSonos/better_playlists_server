@@ -1,8 +1,8 @@
-import { Playlist } from "../../../firebase/adt/music/playlist";
+import { PlaylistRef } from "../../../firebase/adt/music/playlist";
 
 export class PlaylistGraphNode {
 
-    playlist: Playlist;
+    playlist_ref: PlaylistRef;
 
     parents: {
         node: PlaylistGraphNode,
@@ -11,8 +11,8 @@ export class PlaylistGraphNode {
 
     children: PlaylistGraphNode[];
 
-    constructor(playlist: Playlist, parents: { node: PlaylistGraphNode, after_date: Date }[], children: PlaylistGraphNode[]) {
-        this.playlist = playlist;
+    constructor(playlist_ref: PlaylistRef, parents: { node: PlaylistGraphNode, after_date: Date }[], children: PlaylistGraphNode[]) {
+        this.playlist_ref = playlist_ref;
         this.parents = parents;
         this.children = children;
     }
