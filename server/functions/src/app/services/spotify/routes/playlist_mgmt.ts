@@ -1,5 +1,6 @@
 import * as express from 'express';
 import * as functions from 'firebase-functions';
+import { parseResponseError, ResponseError } from '../../../adt/error/response_error';
 
 import { GraphDocument } from '../../../playlist_managment/adt/graph_document';
 import * as playlistMgmtFirestore from '../../../playlist_managment/firestore/playlist_graph';
@@ -15,17 +16,14 @@ async function getUserPlaylistGraph(req: express.Request, res: express.Response)
         res.status(200).send(graph);
     }
     catch (e) {
-        functions.logger.error('Error getting Spotify user\'s playlist graph', e);
+        let resError = parseResponseError(e);
+        res.status(resError.status_code).send(resError);
 
         if (e.response) {
-            res.status(e.response.status);
-            res.send(e.response.data);
-        }
-        else if (e.status) {
-            res.status(e.status).send(e);
+            functions.logger.error('Error getting Spotify user\'s playlist graph', e.response?.data);
         }
         else {
-            res.status(502).send(e);
+            functions.logger.error('Error getting Spotify user\'s playlist graph', e);
         }
     }
 }
@@ -37,7 +35,6 @@ async function putUserPlaylistGraph(req: express.Request, res: express.Response)
 
     let graphDocument: GraphDocument;
     try {
-
         functions.logger.debug("Req body graph document", req.body);
 
         for (let playlistId in req.body) {
@@ -57,25 +54,25 @@ async function putUserPlaylistGraph(req: express.Request, res: express.Response)
             res.status(200).send();
         }
         catch(e) {
-            functions.logger.error('Error putting Spotify user\'s playlist graph', e);
-
+            let resError = parseResponseError(e);
+            res.status(resError.status_code).send(resError);
+    
             if (e.response) {
-                res.status(e.response.status);
-                res.send(e.response.data);
-            }
-            else if (e.status) {
-                res.status(e.status).send(e);
+                functions.logger.error('Error putting Spotify user\'s playlist graph', e.response?.data);
             }
             else {
-                res.status(502).send(e);
+                functions.logger.error('Error putting Spotify user\'s playlist graph', e);
             }
         }        
     }
     catch (e) {
-        res.status(404).send({
-            'status': 404,
-            'error': 'Malformed graph document'
-        });
+        let resError: ResponseError = {
+            status_code: 400,
+            error: 'malformed_graph',
+            message_type: 'string',
+            message: 'Make sure that the graph document sent in the body is the correct format'
+        }
+        res.status(resError.status_code).send(resError);
     }
 
    

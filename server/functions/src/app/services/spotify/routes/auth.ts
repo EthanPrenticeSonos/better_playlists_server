@@ -11,6 +11,7 @@ import * as authFirebase from '../../../firebase/auth';
 import * as spotifyFirestore from '../firestore/spotify_firestore';
 import * as spotifyUsers from './users';
 import * as spotifyAuth from '../firestore/auth';
+import { parseResponseError, ResponseError } from '../../../adt/error/response_error';
 
 
 
@@ -112,11 +113,13 @@ async function authenticate(req: express.Request, res: express.Response) {
         );
     }
     else {
-        res.status(400);
-        res.send({
-            'error': 'invalid_grant_type',
-            'error_description': 'only accepts \'code\' grant type from clients.  refresh managed internally.'
-        });
+        let resError: ResponseError = {
+            status_code: 400,
+            error: 'invalid_grant_type',
+            message_type: 'string',
+            message: 'only accepts \'code\' grant type from clients.  refresh managed internally.'
+        };
+        res.status(resError.status_code).send(resError);
         return;
     }
 
@@ -126,10 +129,15 @@ async function authenticate(req: express.Request, res: express.Response) {
         let firebaseUserId = JSON.parse(req.get('user')!).uid;
         let spotifyUserId = authResponse.user_id;
 
-        if (firebaseUserId === spotifyUserId) {           
-            res.status(409).send({
-                'error': 'User already associated with another Spotify account!'
-            })
+        if (firebaseUserId === spotifyUserId) {
+            let resError: ResponseError = {
+                status_code: 409,
+                error: 'service_account_conflict',
+                message_type: 'string',
+                message: 'Firebase user is already associated with another Spotify account.'
+            };
+            res.status(resError.status_code).send(resError);
+
         }
         else {
             functions.logger.log(`Firebase user \'${firebaseUserId}\' registered with Spotify account ${spotifyUserId}`);
@@ -140,15 +148,14 @@ async function authenticate(req: express.Request, res: express.Response) {
 
     }
     catch (e) {
+        let resError = parseResponseError(e);
+        res.status(resError.status_code).send(resError);
+
         if (e.response) {
             functions.logger.error(e.response?.data);
-            res.status(e.response?.status);
-            res.send(e.response?.data);
         }
         else {
             functions.logger.error(e);
-            res.status(502);
-            res.send(e);
         }
     }
 }
@@ -184,10 +191,15 @@ function authenticateCode(authCode: string, redirectUri: string, codeVerifier: s
  * @param {string} userId id of the Spotify user to authenticate
  * @returns Promise associated with handling the authentication request (if refresh token does not exist, returns rejected Promise instead)
  */
-async function authenticateRefresh(userId: string, authData: SpotifyAuth) {    
+async function authenticateRefresh(userId: string) {
+    // get most recent auth field
+    // cannot share memory between firebase function invocations so cannot have a real lock
+    // instead get the most recent auth as close to checking authData == locked as possible.
+    let authData = await spotifyAuth.getUserAuth(userId);  
     if (authData.locked) { // auth data is already being updated - do nothing
+        functions.logger.log(`Spotify user ${userId} auth is locked.  Waiting.`);
         try {
-            spotifyFirestore.auth.waitOnAuthLocked(userId);
+            await spotifyFirestore.auth.waitOnAuthLocked(userId);
             return;
         }
         catch (e) {
@@ -196,6 +208,8 @@ async function authenticateRefresh(userId: string, authData: SpotifyAuth) {
         }
     }
     else {
+
+        // lock authData and put in user's auth field
         authData.locked = true;
         try {
             await spotifyAuth.putUserAuth(userId, authData);
@@ -345,7 +359,13 @@ export async function authMiddleware(req: express.Request, res: express.Response
     let firebaseUserId: string = JSON.parse(req.get('user')!).uid;
 
     if (!firebaseUserId) { // assume all routes using middleware require a user id
-        res.status(400).send("No user id was provided!");
+        let resError: ResponseError = {
+            status_code: 500,
+            error: 'expected_firebase_token',
+            message_type: 'string',
+            message: 'Expected a Firebase user token to be forwarded where there was none'
+        };
+        res.status(resError.status_code).send(resError);
     }
 
     try {
@@ -371,17 +391,20 @@ export async function authMiddleware(req: express.Request, res: express.Response
                     'auth_data': authData,
                     'required_scopes': REQUIRED_SCOPES
                 });
-                res.status(401);
-                res.send({
-                    'error': 'invalid_grant',
-                    'error_description': 'Refresh token revoked (requires broader scope)'
-                });
+                
+                let resError: ResponseError = {
+                    status_code: 401,
+                    error: 'invalid_grant',
+                    message_type: 'string',
+                    message: 'Refresh token revoked (requires broader scope)'
+                };
+                res.status(resError.status_code).send(resError);
             }
         }
         else { // Token has expired - refresh it
 
             try {
-                await authenticateRefresh(spotifyUserId, authData);                
+                await authenticateRefresh(spotifyUserId);                
 
                 // success -> add Spotify Authorization header to request
                 let authHeaderEntry = await getAuthHeaderEntry(spotifyUserId);
@@ -390,29 +413,26 @@ export async function authMiddleware(req: express.Request, res: express.Response
                 next();
             }
             catch (e) {
-                functions.logger.error(`authMiddleware: Error ${JSON.stringify(e.response?.data)}`);
-
-                // refresh token revoked should be a 401 error
-                if (e.response?.status == 400 && e.response?.data?.error === 'invalid_grant') {
-                    e.response.status = 401;
+                let resError = parseResponseError(e);
+                // refresh token revoked should be a 401 error - override status code
+                if (e.response?.status && e.response?.data?.error === 'invalid_grant') {
+                    resError.status_code = 401;
                 }
-
-                res.status(e.response?.status);
-                res.send(e.response?.data);
+                res.status(resError.status_code).send(resError);
+        
+                if (e.response) {
+                    functions.logger.error('AuthMiddleware error: ', e.response?.data);
+                }
+                else {
+                    functions.logger.error('AuthMiddleware error: ', e);
+                }
             }
         }
     }
     catch (e) {
-        if (e.response) {
-            functions.logger.error(e.response?.data);
-            res.status(e.response?.status ?? 502);
-            res.send(e.response?.data);
-        }
-        else {
-            functions.logger.error(e);
-            res.status(502);
-            res.send(e);
-        }
+        let resError = parseResponseError(e);
+        functions.logger.log(resError);
+        res.status(resError.status_code).send(resError);
     }
 }
 
@@ -447,14 +467,15 @@ router.get('/isAuthenticated', (req, res) => {
 
     isAuthenticated(headers).then(result => {
         res.status(200).send(result);
-    }).catch(error => {
-        if (error.response) {
-            res.status(error.response.status);
-            res.send(error.response.data);
+    }).catch(e => {
+        let resError = parseResponseError(e);
+        res.status(resError.status_code).send(resError);
+
+        if (e.response) {
+            functions.logger.error('/isAuthenticated error: ', e.response?.data);
         }
         else {
-            res.status(502);
-            res.send(error);
+            functions.logger.error('/isAuthenticated error: ', e);
         }
     });
  })

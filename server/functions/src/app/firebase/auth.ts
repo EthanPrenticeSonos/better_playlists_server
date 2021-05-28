@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { DocumentReference, WriteResult } from '@google-cloud/firestore';
 
 import { firestore } from '../firebase/firebase_config';
+import { ResponseError } from '../adt/error/response_error';
 
 const COLLECTION_NAME = 'users';
 
@@ -28,10 +29,13 @@ export async function createUserFromFirebaseAuth(firebaseUserId: string): Promis
         //   to persist
     }
     else {
-        return Promise.reject({
-            'status': 409,
-            'error': 'User already exists'
-        });
+        let error: ResponseError = {
+            status_code: 409,
+            error: 'User already exists',
+            message_type: 'string',
+            message: 'Cannot create a new Firestore document for a user if one has already been created.'
+        };
+        return Promise.reject(error);
     }
 }
 
@@ -67,21 +71,33 @@ export async function getSpotifyUserId(firebaseUserId: string): Promise<string> 
                 return spotifyData.id;
             }
             else {
-                return Promise.reject({
-                    'status': 404,
-                    'error': 'User is not registered for that service'
-                });
+                let error: ResponseError = {
+                    status_code: 404,
+                    error: 'User is not registered for that service (Spotify)',
+                    message_type: 'empty',
+                    message: null
+                };
+                return Promise.reject(error);
             }
         }
         else {
-            return Promise.reject({
-                'status': 404,
-                'error': 'User does not exist'
-            });
+            let error: ResponseError = {
+                status_code: 500,
+                error: 'Firebase user document has not been created',
+                message_type: 'string',
+                message: `Firebase user (${firebaseUserId}) does not exist in Firestore.  A trigger must not have run successfully.`
+            };
+            return Promise.reject(error);
         }
     } 
     catch (e) {
-        return Promise.reject(e);
+        let error: ResponseError = {
+            status_code: 500,
+            error: 'Unexpected error',
+            message_type: typeof(e) === 'string' ? 'string' : 'json',
+            message: e
+        };
+        return Promise.reject(error);
     } 
 }
 
@@ -104,7 +120,15 @@ export async function validateFirebaseIdToken(req: Request, res: Response, next:
             'Authorization: Bearer <Firebase ID Token>',
             'or by passing a "__session" cookie.'
         );
-        res.status(403).send('Unauthorized');
+
+        let resError: ResponseError = {
+            status_code: 403,
+            error: 'Unauthorized',
+            message_type: 'string',
+            message: 'No Firebase ID token was included in the Authorization header'
+        };
+
+        res.status(resError.status_code).send(resError);
         return;
     }
   
@@ -118,8 +142,14 @@ export async function validateFirebaseIdToken(req: Request, res: Response, next:
         // Read the ID Token from cookie.
         idToken = req.cookies.__session;
     } else {
-        // No cookie
-        res.status(403).send('Unauthorized');
+        let resError: ResponseError = {
+            status_code: 403,
+            error: 'Unauthorized',
+            message_type: 'string',
+            message: 'Malformed Authorization header'
+        };
+
+        res.status(resError.status_code).send(resError);
         return;
     }
   
@@ -129,9 +159,15 @@ export async function validateFirebaseIdToken(req: Request, res: Response, next:
           req.headers.user = JSON.stringify(decodedIdToken);
           next();
           return;
-    } catch (error) {
-        functions.logger.error('Error while verifying Firebase ID token:', error);
-        res.status(403).send('Unauthorized');
+    } catch (e) {
+        functions.logger.error('Error while verifying Firebase ID token:', e);
+        let resError: ResponseError = {
+            status_code: 403,
+            error: 'Unauthorized',
+            message_type: 'string',
+            message: 'Error while verifying Firebase ID token.'
+        };
+        res.status(resError.status_code).send(resError);
         return;
     }
 };

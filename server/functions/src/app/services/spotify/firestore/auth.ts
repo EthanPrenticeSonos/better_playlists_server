@@ -20,53 +20,42 @@ const COLLECTION_NAME = 'spotify_users';
  * @returns the authentication object associated with the userId
  */
 export async function getUserAuth(userId: string): Promise<SpotifyAuth> {
-    
-    if (authCache[userId]) { // we have this auth data cached
-        functions.logger.debug(
-            `Fetched cached auth data for Spotify user=${userId}`, 
-            authCache[userId]
-        );
-        return authCache[userId];
-    }
-    else {
-        try {
-            let docSnap = await firestore.collection(COLLECTION_NAME).doc(userId).get();
-            if (docSnap.exists && docSnap.data()?.auth) {
-                functions.logger.debug(
-                    `Fetched Firestore auth data for Spotify user=${userId}`, 
-                    docSnap.get('auth')
-                );
+    try {
+        let docSnap = await firestore.collection(COLLECTION_NAME).doc(userId).get();
+        if (docSnap.exists && docSnap.data()?.auth) {
+            functions.logger.debug(
+                `Fetched Firestore auth data for Spotify user=${userId}`, 
+                docSnap.get('auth')
+            );
 
-                let authSnap = docSnap.get('auth');
+            let authSnap = docSnap.get('auth');
 
-                if (!authSnap.scopes) {
-                    return Promise.reject({
-                        'status': 502,
-                        'error': `Auth field for Spotify user ${userId} does not have a scopes field`
-                    });
-                }
-
-                let authData: SpotifyAuth = {
-                    'access_token': authSnap!.access_token,
-                    'refresh_token': authSnap!.refresh_token,
-                    'expires_at': authSnap!.expires_at.toDate(),
-                    'scopes': authSnap!.scopes,
-                    'locked': authSnap!.locked
-                };
-                
-                authCache[userId] = authData;
-                return authData;
-            }
-            else {
+            if (!authSnap.scopes) {
                 return Promise.reject({
-                    'status': 404,
-                    'error': "User does not exist"
+                    'status': 502,
+                    'error': `Auth field for Spotify user ${userId} does not have a scopes field`
                 });
             }
+
+            let authData: SpotifyAuth = {
+                'access_token': authSnap!.access_token,
+                'refresh_token': authSnap!.refresh_token,
+                'expires_at': authSnap!.expires_at.toDate(),
+                'scopes': authSnap!.scopes,
+                'locked': authSnap!.locked
+            };
+            
+            return authData;
         }
-        catch (e) {
-            return Promise.reject(e);
+        else {
+            return Promise.reject({
+                'status': 404,
+                'error': "User does not exist"
+            });
         }
+    }
+    catch (e) {
+        return Promise.reject(e);
     }
 };
 
@@ -79,10 +68,6 @@ export async function getUserAuth(userId: string): Promise<SpotifyAuth> {
  * @returns Promise associated with putting [authObj] in Firestore
  */
 export async function putUserAuth(userId: string, authObj: SpotifyAuth): Promise<WriteResult> {
-
-    // first cache it
-    authCache[userId] = authObj;
-    functions.logger.debug(`Cached new auth data for Spotify user=${userId} (${JSON.stringify(authObj)})`);
 
     // then put it in firestore
     let doc = firestore
@@ -137,8 +122,8 @@ export async function waitOnAuthLocked(userId: string): Promise<void> {
         }
     }
 
-    // try 20 times, waiting 50ms between each
-    for (let i = 0; i < 20; ++i) {
+    // try 40 times, waiting 50ms between each
+    for (let i = 0; i < 40; ++i) {
         try {
             if (!(await checkAuthLocked())) {
                 return;
@@ -178,13 +163,3 @@ export async function waitOnAuthLocked(userId: string): Promise<void> {
         return Promise.reject(e);
     }
 }
-
-
-
-export interface AuthCache {
-    [userId: string]: SpotifyAuth
-};
-
-// use this for caching results for getting user auth
-// otherwise we will query firestore each Spotify request to get the access token
-export let authCache: AuthCache = { };

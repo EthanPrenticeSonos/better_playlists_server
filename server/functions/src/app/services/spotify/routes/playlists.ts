@@ -5,6 +5,7 @@ import axios from 'axios';
 
 import { Headers } from '../../../adt/routing/headers'
 import * as util from '../../../util/util';
+import { parseResponseError } from '../../../adt/error/response_error';
 
 
 const SPOTIFY_TRACK_FIELDS = 
@@ -201,14 +202,14 @@ router.get('/me', async (req, res) => {
         res.status(200).send(playlists);
     }
     catch (e) {
-        functions.logger.error('Error getting Spotify user\'s playlists', e);
+        let resError = parseResponseError(e);
+        res.status(resError.status_code).send(resError);
 
         if (e.response) {
-            res.status(e.response.status);
-            res.send(e.response.data);
+            functions.logger.error('Error getting Spotify user\'s playlists', e.response?.data);
         }
         else {
-            res.status(502).send(e);
+            functions.logger.error('Error getting Spotify user\'s playlists', e);
         }
     }
 });
@@ -230,16 +231,15 @@ router.get('/:playlistId/tracks', (req, res) => {
         .then(playlistTracks => {
             res.status(200).send(playlistTracks);
         })
-        .catch(error => {
-            if (error.response) {
-                functions.logger.error("Error getting Spotify playlist tracks", error.response.status, error.response.data);
-                res.status(error.response.status);
-                res.send(error.response.data);
+        .catch(e => {
+            let resError = parseResponseError(e);
+            res.status(resError.status_code).send(resError);
+    
+            if (e.response) {
+                functions.logger.error('Error getting Spotify playlist tracks', e.response?.data);
             }
             else {
-                functions.logger.error("Error getting Spotify playlist tracks", error);
-                res.status(502);
-                res.send(error);
+                functions.logger.error('Error getting Spotify playlist tracks', e);
             }
         });
 });
@@ -260,16 +260,15 @@ router.get('/:playlistId', (req, res) => {
         .then(playlist => {
             res.status(200).send(playlist);
         })
-        .catch(error => {
-            if (error.response) {
-                functions.logger.error("Error getting Spotify playlist tracks", error.response.status, error.response.data);
-                res.status(error.response.status);
-                res.send(error.response.data);
+        .catch(e => {
+            let resError = parseResponseError(e);
+            res.status(resError.status_code).send(resError);
+    
+            if (e.response) {
+                functions.logger.error('Error getting Spotify playlist tracks', e.response?.data);
             }
             else {
-                functions.logger.error("Error getting Spotify playlist tracks", error);
-                res.status(502);
-                res.send(error);
+                functions.logger.error('Error getting Spotify playlist tracks', e);
             }
         });
 });

@@ -5,6 +5,7 @@ import axios from 'axios';
 
 import { Headers } from '../../../adt/routing/headers';
 import * as util from '../../../util/util';
+import { parseResponseError } from '../../../adt/error/response_error';
 
 
 /**
@@ -40,15 +41,15 @@ router.get('/me', (req, res) => {
         .then(userData => {
             res.send(userData);
         })
-        .catch(error => {
-            if (error.response) {
-                res.status(error.response?.status ?? 502);
-                res.send(error.response.data);
+        .catch(e => {
+            let resError = parseResponseError(e);
+            res.status(resError.status_code).send(resError);
+    
+            if (e.response) {
+                functions.logger.error('Error getting Spotify playlist tracks', e.response?.data);
             }
             else {
-                functions.logger.error(error);
-                res.status(502);
-                res.send(error);
+                functions.logger.error('Error getting Spotify playlist tracks', e);
             }
         });
 });

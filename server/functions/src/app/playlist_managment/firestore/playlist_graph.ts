@@ -70,8 +70,6 @@ export async function getPlaylistGraphDocument(service: string, userId: string):
 export async function putPlaylistGraphDocument(service: string, userId: string, graphDoc: GraphDocument): Promise<WriteResult> {
     let collectionName = serviceCollectionMap[service];
 
-    console.log(graphDoc);
-
     try {
         return await firestore.collection(collectionName).doc(userId).set({
             'graph': graphDoc
