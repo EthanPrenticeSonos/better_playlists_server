@@ -33,3 +33,12 @@ exports.app = functions.https.onRequest(app);
 export const onUserCreate = functions.auth.user().onCreate((user) => {
     return firebaseAuth.createUserFromFirebaseAuth(user.uid);
 });
+
+
+/*
+    TIMERS
+*/
+export const scheduledGraphUpdater = functions.pubsub.schedule('every 3 minutes').onRun((context) => {
+    console.log('This will be run every 3 minutes!');
+    return null;
+});

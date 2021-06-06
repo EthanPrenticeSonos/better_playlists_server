@@ -7,7 +7,7 @@ export interface GraphDocument {
 export interface GraphNodeDocument {
     is_root?: boolean,
     playlist_ref: PlaylistRef;
-    children_ids: string[];
+    children: string[];
     parents: {
         id: string,
         after_date: Date

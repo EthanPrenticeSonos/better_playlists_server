@@ -28,11 +28,16 @@ export function getProxyUrl(url: URL, changeToPath: string): URL {
     return url;
 }
 
-
+/**
+ * Only include headers that are relevant as inputs to functions
+ * @param headers 
+ * @returns 
+ */
 export function filterHeaders(headers: Headers): Headers {
     var keyList = [
         'content-type',
-        'authorization'
+        'authorization',
+        'spotify_id'
     ]
 
     for (let key in headers) {

@@ -1,3 +1,5 @@
+import * as functions from 'firebase-functions';
+
 import { Timestamp, WriteResult } from '@google-cloud/firestore';
 import { PlaylistRef } from '../../firebase/adt/music/playlist';
 import { firestore } from '../../firebase/firebase_config';
@@ -70,10 +72,14 @@ export async function getPlaylistGraphDocument(service: string, userId: string):
 export async function putPlaylistGraphDocument(service: string, userId: string, graphDoc: GraphDocument): Promise<WriteResult> {
     let collectionName = serviceCollectionMap[service];
 
+    functions.logger.log("Putting graph.", {
+        graph: graphDoc
+    });
+
     try {
         return await firestore.collection(collectionName).doc(userId).set({
             'graph': graphDoc
-        }, { merge: true });
+        }, { mergeFields: ["graph"] });
     }
     catch (e) {
         return Promise.reject(e);
@@ -116,7 +122,7 @@ export async function addPlaylistsToGraph(service: string, userId: string, playl
     
             let newNode: GraphNodeDocument = {
                 playlist_ref: playlistRef,
-                children_ids: [],
+                children: [],
                 parents: []
             }
 
@@ -159,9 +165,9 @@ export async function removePlaylistsFromGraph(service: string, userId: string, 
                 parentEdges = parentEdges.filter(edge => edge.id !== deleteId);
                 graphDoc[playlistId].parents = parentEdges;
 
-                let childEdges = graphDoc[playlistId].children_ids;
+                let childEdges = graphDoc[playlistId].children;
                 childEdges = childEdges.filter(edge => edge !== deleteId);
-                graphDoc[playlistId].children_ids = childEdges;
+                graphDoc[playlistId].children = childEdges;
             }
         }
 

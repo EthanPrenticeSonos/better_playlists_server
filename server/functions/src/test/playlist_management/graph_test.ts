@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { GraphDocument } from '../../app/playlist_managment/adt/graph_document';
 import { PlaylistOperation } from '../../app/playlist_managment/adt/operations/playlist_operation';
-import { PlaylistOperationType } from '../../app/playlist_managment/adt/operations/playlist_operation_type';
 import { PlaylistGraph } from '../../app/playlist_managment/adt/playlist_graph/playlist_graph';
 
 describe("Playlist Dependency Graph", () => {
@@ -15,7 +14,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_b',
@@ -30,7 +29,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist B',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a'],
+                    children: ['playlist_a'],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -45,7 +44,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist C',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -60,7 +59,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist D',
                         can_edit: true
                     },
-                    children_ids: ['playlist_b', 'playlist_c'],
+                    children: ['playlist_b', 'playlist_c'],
                     parents: []
                 },
             }
@@ -70,12 +69,9 @@ describe("Playlist Dependency Graph", () => {
             let operations = playlistGraph.getOrderOfOperations();
     
             let expected: PlaylistOperation[] = [
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_c","dest_id":"playlist_d","after_date":new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_c","dest_id":"playlist_d","after_date":new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_a","dest_id":"playlist_b","after_date":new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_a","dest_id":"playlist_b","after_date":new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))}
+                {"source_id":"playlist_c","dest_id":"playlist_d","after_date":new Date(Date.parse('01 Jan 1970 3:00:00 GMT'))},
+                {"source_id":"playlist_a","dest_id":"playlist_b","after_date":new Date(Date.parse('01 Jan 1970 1:00:00 GMT'))},
+                {"source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse('01 Jan 1970 2:00:00 GMT'))},
             ];
     
             expect(operations === expected);
@@ -89,7 +85,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -104,7 +100,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist B',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -122,7 +118,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist C',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_e',
@@ -137,7 +133,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist D',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a', 'playlist_b'],
+                    children: ['playlist_a', 'playlist_b'],
                     parents: []
                 },
     
@@ -147,7 +143,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist E',
                         can_edit: true
                     },
-                    children_ids: ['playlist_b', 'playlist_c'],
+                    children: ['playlist_b', 'playlist_c'],
                     parents: [
                         {
                             id: 'playlist_f',
@@ -162,7 +158,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist F',
                         can_edit: true
                     },
-                    children_ids: ['playlist_e'],
+                    children: ['playlist_e'],
                     parents: []
                 },
             }
@@ -171,16 +167,11 @@ describe("Playlist Dependency Graph", () => {
             let operations = playlistGraph.getOrderOfOperations();
     
             let expected: PlaylistOperation[] = [
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T02:00:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T02:00:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_b","dest_id":"playlist_e","after_date":new Date(Date.parse("1970-01-01T04:30:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_b","dest_id":"playlist_e","after_date":new Date(Date.parse("1970-01-01T04:30:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_a","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_a","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_c","dest_id":"playlist_e","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_c","dest_id":"playlist_e","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_e","dest_id":"playlist_f","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_e","dest_id":"playlist_f","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))}
+                {"source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T02:00:00.000Z"))},
+                {"source_id":"playlist_b","dest_id":"playlist_e","after_date":new Date(Date.parse("1970-01-01T04:30:00.000Z"))},
+                {"source_id":"playlist_a","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
+                {"source_id":"playlist_c","dest_id":"playlist_e","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))},
+                {"source_id":"playlist_e","dest_id":"playlist_f","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))},
             ];
     
             expect(operations === expected);
@@ -194,7 +185,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_b',
@@ -217,7 +208,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist B',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a'],
+                    children: ['playlist_a'],
                     parents: [
                         {
                             id: 'playlist_c',
@@ -235,7 +226,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist C',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a', 'playlist_b'],
+                    children: ['playlist_a', 'playlist_b'],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -250,7 +241,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist D',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a', 'playlist_b', 'playlist_c'],
+                    children: ['playlist_a', 'playlist_b', 'playlist_c'],
                     parents: []
                 }
             }
@@ -259,18 +250,12 @@ describe("Playlist Dependency Graph", () => {
             let operations = playlistGraph.getOrderOfOperations();
     
             let expected: PlaylistOperation[] = [
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_a","dest_id":"playlist_b","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_a","dest_id":"playlist_b","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_a","dest_id":"playlist_c","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_a","dest_id":"playlist_c","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_a","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_a","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_b","dest_id":"playlist_c","after_date":new Date(Date.parse("1970-01-01T02:00:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_b","dest_id":"playlist_c","after_date":new Date(Date.parse("1970-01-01T02:00:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T04:30:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T04:30:00.000Z"))},
-                {"type":PlaylistOperationType.REMOVE,"source_id":"playlist_c","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))},
-                {"type":PlaylistOperationType.ADD,   "source_id":"playlist_c","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))}
+                {"source_id":"playlist_a","dest_id":"playlist_b","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
+                {"source_id":"playlist_a","dest_id":"playlist_c","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
+                {"source_id":"playlist_a","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T01:00:00.000Z"))},
+                {"source_id":"playlist_b","dest_id":"playlist_c","after_date":new Date(Date.parse("1970-01-01T02:00:00.000Z"))},
+                {"source_id":"playlist_b","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T04:30:00.000Z"))},
+                {"source_id":"playlist_c","dest_id":"playlist_d","after_date":new Date(Date.parse("1970-01-01T03:10:00.000Z"))},
             ];
     
             expect(operations === expected);
@@ -287,7 +272,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: ['playlist_b'],
+                    children: ['playlist_b'],
                     parents: [
                         {
                             id: 'playlist_b',
@@ -302,7 +287,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist B',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a'],
+                    children: ['playlist_a'],
                     parents: [
                         {
                             id: 'playlist_a',
@@ -329,7 +314,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a'],
+                    children: ['playlist_a'],
                     parents: [
                         {
                             id: 'playlist_a',
@@ -369,7 +354,7 @@ describe("Playlist Dependency Graph", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: []
                 }
             }

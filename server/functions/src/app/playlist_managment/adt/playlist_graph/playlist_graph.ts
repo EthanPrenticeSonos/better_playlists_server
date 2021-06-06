@@ -1,6 +1,7 @@
+import * as functions from 'firebase-functions';
+
 import { GraphDocument, GraphNodeDocument } from "../graph_document";
 import { PlaylistOperation } from "../operations/playlist_operation";
-import { PlaylistOperationType } from "../operations/playlist_operation_type";
 import { PlaylistGraphNode } from "./playlist_graph_node";
 
 /**
@@ -14,7 +15,7 @@ export class PlaylistGraph {
 
     constructor(graphDocument: GraphDocument) {
 
-        if (this.hasCycle(graphDocument)) {
+        if (PlaylistGraph.hasCycle(graphDocument)) {
             throw "Cannot build graph - document contains cycles!";
         }
 
@@ -69,14 +70,11 @@ export class PlaylistGraph {
                     computedPlaylists.add(node.playlist_ref.id);
 
                     for (let parent of node.parents) {
-                        for (let opType of [PlaylistOperationType.REMOVE, PlaylistOperationType.ADD]) {
-                            operations.push({
-                                type: opType,
-                                source_id: node.playlist_ref.id,
-                                dest_id: parent.node.playlist_ref.id,
-                                after_date: parent.after_date
-                            });
-                        }
+                        operations.push({
+                            source_id: node.playlist_ref.id,
+                            dest_id: parent.node.playlist_ref.id,
+                            after_date: parent.after_date
+                        });
                     }
                     
                 }
@@ -85,14 +83,16 @@ export class PlaylistGraph {
         return operations;
     }
 
-    hasCycle(graphDocument: GraphDocument): boolean {
+    static hasCycle(graphDocument: GraphDocument): boolean {
 
         function hasCycleUtil(node: GraphNodeDocument, visited: Set<string>, recIds: Set<string>) {
             if (!visited.has(node.playlist_ref.id)) {
                 visited.add(node.playlist_ref.id);
                 recIds.add(node.playlist_ref.id);
 
-                for (let childId of node.children_ids) {
+                functions.logger.log(node);
+
+                for (let childId of node.children) {
                     if (!visited.has(childId) && hasCycleUtil(graphDocument[childId], visited, recIds)) {
                         return true;
                     }
@@ -115,6 +115,46 @@ export class PlaylistGraph {
         }
 
         return false;
+    }
+
+    static hasDuplicateEdges(graphDocument: GraphDocument): boolean {
+        let pairSet = new Set<string>();
+        for (let playlistId in graphDocument) {
+            for (let childId of graphDocument[playlistId].children) {
+                if (pairSet.has(`${playlistId}:${childId}`)) {
+                    return true;
+                }
+                pairSet.add(`${playlistId}:${childId}`);
+            }
+        }
+
+        return false;
+    }
+
+    static hasValidRelationships(graphDocument: GraphDocument): boolean {
+        let idSets: {[pid: string]: {children: Set<string>, parents: Set<string>}} = {};
+        for (let playlistId in graphDocument) {
+            idSets[playlistId] = {
+                children: new Set(graphDocument[playlistId].children),
+                parents: new Set(graphDocument[playlistId].parents.map((x) => x.id))
+            };
+        }
+
+        for (let playlistId in graphDocument) {
+            for (let parentEdge of graphDocument[playlistId].parents) {
+                if (!idSets[parentEdge.id].children.has(playlistId)) {
+                    return false;
+                }
+            }
+
+            for (let childId of graphDocument[playlistId].children) {
+                if (!idSets[childId].parents.has(playlistId)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     nodeDocumentToNode(graphDocument: GraphDocument, node: GraphNodeDocument): PlaylistGraphNode {

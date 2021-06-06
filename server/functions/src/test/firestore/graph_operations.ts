@@ -19,7 +19,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_b',
@@ -34,7 +34,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist B',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a'],
+                    children: ['playlist_a'],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -49,7 +49,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist C',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -64,7 +64,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist D',
                         can_edit: true
                     },
-                    children_ids: ['playlist_b', 'playlist_c'],
+                    children: ['playlist_b', 'playlist_c'],
                     parents: [],
                     is_root: true
                 },
@@ -111,7 +111,7 @@ describe("Playlist Graph Firestore Operations", () => {
             let expected: GraphDocument = {
                 'test_playlist_add': {
                     playlist_ref: playlistRef,
-                    children_ids: [],
+                    children: [],
                     parents: []
                 }
             }
@@ -173,7 +173,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist A',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_b',
@@ -188,7 +188,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist B',
                         can_edit: true
                     },
-                    children_ids: ['playlist_a'],
+                    children: ['playlist_a'],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -203,7 +203,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist C',
                         can_edit: true
                     },
-                    children_ids: [],
+                    children: [],
                     parents: [
                         {
                             id: 'playlist_d',
@@ -218,7 +218,7 @@ describe("Playlist Graph Firestore Operations", () => {
                         name: 'Playlist D',
                         can_edit: true
                     },
-                    children_ids: ['playlist_b', 'playlist_c'],
+                    children: ['playlist_b', 'playlist_c'],
                     parents: [],
                     is_root: true
                 },

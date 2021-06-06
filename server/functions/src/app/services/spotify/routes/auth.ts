@@ -441,7 +441,7 @@ export async function authMiddleware(req: express.Request, res: express.Response
  * @param {string} userId the id of the Spotify user
  * @returns the authorization header value for Spotify on success, null on failure
  */
-async function getAuthHeaderEntry(userId: string): Promise<string> {
+export async function getAuthHeaderEntry(userId: string): Promise<string> {
     try {
         let userAuth = await spotifyFirestore.auth.getUserAuth(userId);
         return `Bearer ${userAuth.access_token}`;

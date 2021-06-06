@@ -83,6 +83,13 @@ async function getUserPlaylists(searchParams: URLSearchParams, headers: Headers)
     try {
         let playlistsRes = await axios.get(spotifyUrl.href, reqConfig);
 
+        // playlist must be owned to edit using Spotify API
+        for (let i = 0; i < playlistsRes.data.items.length; ++i) {
+            let playlist = playlistsRes.data.items[i];
+            let canEdit = playlist.owner.id === headers.spotify_id;
+            playlistsRes.data.items[i].can_edit = canEdit;
+        }
+
         if (playlistsRes?.data?.next) {
             let nextUrl = new URL(playlistsRes.data.next);
             let proxiedUrl = util.getProxyUrl(nextUrl, 'spotify/playlists/me');
@@ -122,7 +129,7 @@ async function getPlaylistById(playlistId: String, headers: Headers): Promise<an
         let playlist = (await axios.get(spotifyUrl.href, reqConfig))!.data;
 
         // playlist must be owned to edit using Spotify API
-        playlist.can_edit = (playlist.owner.id === headers.user_id);
+        playlist.can_edit = (playlist.owner.id === headers.spotify_id);
 
         // change 'next' url to point to server rather than Spotify
         if (playlist?.tracks?.next) {
@@ -149,7 +156,7 @@ async function getPlaylistById(playlistId: String, headers: Headers): Promise<an
  * @param {Object} headers 
  * @returns 
  */
- async function getPlaylistTracksById(playlistId: String, headers: Headers, searchParams: URLSearchParams): Promise<any> {
+async function getPlaylistTracksById(playlistId: String, headers: Headers, searchParams: URLSearchParams): Promise<any> {
     let spotifyUrl = new URL(`https://api.spotify.com/v1/users/spotify/playlists/${playlistId}/tracks`);
 
     let reqConfig = {

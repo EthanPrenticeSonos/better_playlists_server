@@ -112,6 +112,7 @@ export async function validateFirebaseIdToken(req: Request, res: Response, next:
     functions.logger.debug('Checking if request is authorized with Firebase ID token');
   
     let authHeader = req.get('authorization');
+    functions.logger.log(`Authorization: ${authHeader}`);
 
     if (!(authHeader && authHeader.startsWith('Bearer ')) && !req.cookies?.__session) {
         functions.logger.error(
